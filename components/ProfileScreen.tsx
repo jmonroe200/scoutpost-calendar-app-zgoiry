@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { commonStyles, colors } from '../styles/commonStyles';
 import Icon from './Icon';
 import { router } from 'expo-router';
@@ -15,23 +15,20 @@ interface UserProfile {
   troop: string;
   role: string;
   phone: string;
-  bio: string;
-  joinDate: string;
   badges: number;
   events: number;
   posts: number;
 }
 
 export default function ProfileScreen() {
+  // Auto-fill name and email from signup (simulated from login screen)
   const [user, setUser] = useState<UserProfile>({
-    name: 'Scout Leader',
-    email: 'leader@scoutpost.com',
-    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&crop=face',
+    name: 'Scout Leader', // This would come from signup
+    email: 'leader@scoutpost.com', // This would come from signup
+    avatar: '', // Empty string for generic avatar
     troop: 'Troop 123',
     role: 'Scoutmaster',
     phone: '+1 (555) 123-4567',
-    bio: 'Passionate about outdoor adventures and helping young scouts develop leadership skills.',
-    joinDate: 'January 2020',
     badges: 15,
     events: 42,
     posts: 8
@@ -191,15 +188,18 @@ export default function ProfileScreen() {
             onPress={() => setShowEditProfile(true)}
             style={{ position: 'relative' }}
           >
-            <Image
-              source={{ uri: user.avatar }}
-              style={{
-                width: 100,
-                height: 100,
-                borderRadius: 50,
-                marginBottom: 16,
-              }}
-            />
+            {/* Generic greyscale person avatar */}
+            <View style={{
+              width: 100,
+              height: 100,
+              borderRadius: 50,
+              backgroundColor: '#E5E5E5',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: 16,
+            }}>
+              <Icon name="person" size={50} color="#9E9E9E" />
+            </View>
             <View style={{
               position: 'absolute',
               bottom: 12,
@@ -218,14 +218,6 @@ export default function ProfileScreen() {
           </Text>
           <Text style={[commonStyles.textSecondary, { marginBottom: 8 }]}>
             {user.role} • {user.troop}
-          </Text>
-          {user.bio && (
-            <Text style={[commonStyles.textSecondary, { textAlign: 'center', marginBottom: 8 }]}>
-              {user.bio}
-            </Text>
-          )}
-          <Text style={commonStyles.textSecondary}>
-            Member since {user.joinDate}
           </Text>
         </View>
 
@@ -298,11 +290,14 @@ export default function ProfileScreen() {
           color={colors.error}
         />
 
-        {/* App Info */}
+        {/* App Info with Red Tent Icon */}
         <View style={{ alignItems: 'center', marginTop: 20, paddingBottom: 20 }}>
-          <Text style={[commonStyles.textSecondary, { textAlign: 'center' }]}>
-            Scoutpost v1.0.0
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+            <Icon name="home" size={20} color="#DC2626" style={{ marginRight: 8 }} />
+            <Text style={[commonStyles.textSecondary, { textAlign: 'center' }]}>
+              Scoutpost v1.0.0
+            </Text>
+          </View>
           <Text style={[commonStyles.textSecondary, { textAlign: 'center', marginTop: 4 }]}>
             Your scouting calendar and community
           </Text>
