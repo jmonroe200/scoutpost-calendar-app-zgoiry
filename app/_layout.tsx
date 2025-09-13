@@ -1,9 +1,11 @@
+
 import { Stack, useGlobalSearchParams } from 'expo-router';
 import { SafeAreaProvider, useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
 import { Platform } from 'react-native';
 import { useEffect, useState } from 'react';
 import { setupErrorLogging } from '../utils/errorLogger';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { useFonts, Roboto_400Regular, Roboto_500Medium, Roboto_700Bold } from '@expo-google-fonts/roboto';
 
 const STORAGE_KEY = 'emulated_device';
 
@@ -11,6 +13,12 @@ export default function RootLayout() {
   const actualInsets = useSafeAreaInsets();
   const { emulate } = useGlobalSearchParams<{ emulate?: string }>();
   const [storedEmulate, setStoredEmulate] = useState<string | null>(null);
+
+  let [fontsLoaded] = useFonts({
+    Roboto_400Regular,
+    Roboto_500Medium,
+    Roboto_700Bold,
+  });
 
   useEffect(() => {
     // Set up global error logging
@@ -42,6 +50,10 @@ export default function RootLayout() {
     // Use stored emulate value if available, otherwise use the current emulate parameter
     const deviceToEmulate = storedEmulate || emulate;
     insetsToUse = deviceToEmulate ? simulatedInsets[deviceToEmulate as keyof typeof simulatedInsets] || actualInsets : actualInsets;
+  }
+
+  if (!fontsLoaded) {
+    return null;
   }
 
   return (

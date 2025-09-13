@@ -1,24 +1,39 @@
+
 import { StyleSheet, ViewStyle, TextStyle } from 'react-native';
 
 export const colors = {
-  primary: '#162456',    // Material Blue
-  secondary: '#193cb8',  // Darker Blue
-  accent: '#64B5F6',     // Light Blue
-  background: '#101824',  // Keeping dark background
-  backgroundAlt: '#162133',  // Keeping dark background
-  text: '#e3e3e3',       // Keeping light text
-  grey: '#90CAF9',       // Light Blue Grey
-  card: '#193cb8',       // Keeping dark card background
+  primary: '#2E7D32',      // Scout Green
+  secondary: '#4E342E',    // Scout Brown
+  accent: '#81C784',       // Light Green
+  background: '#FAFAFA',   // Light Grey Background
+  backgroundAlt: '#FFFFFF', // White
+  text: '#212121',         // Dark Grey Text
+  textSecondary: '#757575', // Medium Grey Text
+  grey: '#E0E0E0',         // Light Grey
+  card: '#FFFFFF',         // White Card Background
+  border: '#E0E0E0',       // Border Color
+  success: '#4CAF50',      // Success Green
+  error: '#F44336',        // Error Red
+  warning: '#FF9800',      // Warning Orange
+  info: '#2196F3',         // Info Blue
+  like: '#E91E63',         // Like Pink
 };
 
 export const buttonStyles = StyleSheet.create({
-  instructionsButton: {
+  primary: {
     backgroundColor: colors.primary,
     alignSelf: 'center',
     width: '100%',
   },
-  backButton: {
-    backgroundColor: colors.backgroundAlt,
+  secondary: {
+    backgroundColor: colors.secondary,
+    alignSelf: 'center',
+    width: '100%',
+  },
+  outline: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: colors.primary,
     alignSelf: 'center',
     width: '100%',
   },
@@ -35,15 +50,12 @@ export const commonStyles = StyleSheet.create({
     backgroundColor: colors.background,
     width: '100%',
     height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   content: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
     maxWidth: 800,
     width: '100%',
+    alignSelf: 'center',
   },
   title: {
     fontSize: 24,
@@ -52,38 +64,80 @@ export const commonStyles = StyleSheet.create({
     color: colors.text,
     marginBottom: 10
   },
+  subtitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 8,
+  },
   text: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: '400',
     color: colors.text,
     marginBottom: 8,
     lineHeight: 24,
-    textAlign: 'center',
+  },
+  textSecondary: {
+    fontSize: 14,
+    fontWeight: '400',
+    color: colors.textSecondary,
+    lineHeight: 20,
   },
   section: {
     width: '100%',
-    alignItems: 'center',
     paddingHorizontal: 20,
-  },
-  buttonContainer: {
-    width: '100%',
-    alignItems: 'center',
-    paddingHorizontal: 20,
+    marginBottom: 20,
   },
   card: {
-    backgroundColor: colors.backgroundAlt,
-    borderColor: colors.grey,
+    backgroundColor: colors.card,
+    borderColor: colors.border,
     borderWidth: 1,
-    borderRadius: 10,
-    padding: 10,
+    borderRadius: 12,
+    padding: 16,
     marginVertical: 8,
     width: '100%',
-    boxShadow: '0px 2px 3px rgba(0, 0, 0, 0.1)',
-    elevation: 2,
+    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
+    elevation: 3,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  centerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   icon: {
-    width: 60,
-    height: 60,
-    tintColor: "white",
+    width: 24,
+    height: 24,
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.grey,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    backgroundColor: colors.backgroundAlt,
+    color: colors.text,
+  },
+  button: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: colors.backgroundAlt,
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
