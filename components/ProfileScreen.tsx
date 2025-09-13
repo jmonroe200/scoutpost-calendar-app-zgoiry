@@ -4,19 +4,42 @@ import { View, Text, ScrollView, TouchableOpacity, Image, Alert } from 'react-na
 import { commonStyles, colors } from '../styles/commonStyles';
 import Icon from './Icon';
 import { router } from 'expo-router';
+import SimpleBottomSheet from './BottomSheet';
+import EditProfileScreen from './EditProfileScreen';
+import SettingsScreen from './SettingsScreen';
+
+interface UserProfile {
+  name: string;
+  email: string;
+  avatar: string;
+  troop: string;
+  role: string;
+  phone: string;
+  bio: string;
+  joinDate: string;
+  badges: number;
+  events: number;
+  posts: number;
+}
 
 export default function ProfileScreen() {
-  const [user] = useState({
+  const [user, setUser] = useState<UserProfile>({
     name: 'Scout Leader',
     email: 'leader@scoutpost.com',
     avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&crop=face',
     troop: 'Troop 123',
     role: 'Scoutmaster',
+    phone: '+1 (555) 123-4567',
+    bio: 'Passionate about outdoor adventures and helping young scouts develop leadership skills.',
     joinDate: 'January 2020',
     badges: 15,
     events: 42,
     posts: 8
   });
+
+  const [showEditProfile, setShowEditProfile] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   const handleLogout = () => {
     Alert.alert(
@@ -34,6 +57,18 @@ export default function ProfileScreen() {
         }
       ]
     );
+  };
+
+  const handleSaveProfile = (updatedProfile: UserProfile) => {
+    setUser(updatedProfile);
+    setShowEditProfile(false);
+    console.log('Profile updated:', updatedProfile);
+    Alert.alert('Success', 'Profile updated successfully!');
+  };
+
+  const handleNotifications = () => {
+    setShowNotifications(true);
+    console.log('Notifications screen opened');
   };
 
   const StatCard = ({ icon, label, value, color }: { icon: string; label: string; value: number; color: string }) => (
@@ -75,26 +110,120 @@ export default function ProfileScreen() {
     </TouchableOpacity>
   );
 
+  const NotificationsContent = () => (
+    <View style={{ padding: 20 }}>
+      <Text style={[commonStyles.subtitle, { textAlign: 'center', marginBottom: 20 }]}>
+        Notifications
+      </Text>
+      
+      <View style={[commonStyles.card, { marginBottom: 12 }]}>
+        <View style={[commonStyles.row, { marginBottom: 8 }]}>
+          <Icon name="calendar" size={20} color={colors.primary} />
+          <Text style={[commonStyles.text, { marginLeft: 12, flex: 1 }]}>
+            Camping Trip Reminder
+          </Text>
+          <Text style={commonStyles.textSecondary}>2h ago</Text>
+        </View>
+        <Text style={commonStyles.textSecondary}>
+          Don&apos;t forget about the camping trip this weekend at Pine Lake!
+        </Text>
+      </View>
+
+      <View style={[commonStyles.card, { marginBottom: 12 }]}>
+        <View style={[commonStyles.row, { marginBottom: 8 }]}>
+          <Icon name="heart" size={20} color={colors.like} />
+          <Text style={[commonStyles.text, { marginLeft: 12, flex: 1 }]}>
+            New Like on Your Post
+          </Text>
+          <Text style={commonStyles.textSecondary}>5h ago</Text>
+        </View>
+        <Text style={commonStyles.textSecondary}>
+          Sarah liked your post about the merit badge workshop.
+        </Text>
+      </View>
+
+      <View style={[commonStyles.card, { marginBottom: 12 }]}>
+        <View style={[commonStyles.row, { marginBottom: 8 }]}>
+          <Icon name="chatbubble" size={20} color={colors.info} />
+          <Text style={[commonStyles.text, { marginLeft: 12, flex: 1 }]}>
+            New Comment
+          </Text>
+          <Text style={commonStyles.textSecondary}>1d ago</Text>
+        </View>
+        <Text style={commonStyles.textSecondary}>
+          Mike commented on your hiking photos from last weekend.
+        </Text>
+      </View>
+
+      <TouchableOpacity
+        style={[commonStyles.button, { marginTop: 20 }]}
+        onPress={() => setShowNotifications(false)}
+      >
+        <Text style={commonStyles.buttonText}>Close</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  if (showEditProfile) {
+    return (
+      <EditProfileScreen
+        initialProfile={user}
+        onSave={handleSaveProfile}
+        onCancel={() => setShowEditProfile(false)}
+      />
+    );
+  }
+
+  if (showSettings) {
+    return (
+      <SettingsScreen
+        onClose={() => setShowSettings(false)}
+      />
+    );
+  }
+
   return (
     <ScrollView style={{ flex: 1 }}>
       <View style={commonStyles.section}>
         {/* Profile Header */}
         <View style={[commonStyles.card, { alignItems: 'center', paddingVertical: 24 }]}>
-          <Image
-            source={{ uri: user.avatar }}
-            style={{
-              width: 100,
-              height: 100,
-              borderRadius: 50,
-              marginBottom: 16,
-            }}
-          />
+          <TouchableOpacity
+            onPress={() => setShowEditProfile(true)}
+            style={{ position: 'relative' }}
+          >
+            <Image
+              source={{ uri: user.avatar }}
+              style={{
+                width: 100,
+                height: 100,
+                borderRadius: 50,
+                marginBottom: 16,
+              }}
+            />
+            <View style={{
+              position: 'absolute',
+              bottom: 12,
+              right: 0,
+              backgroundColor: colors.primary,
+              borderRadius: 15,
+              padding: 6,
+              borderWidth: 2,
+              borderColor: colors.backgroundAlt,
+            }}>
+              <Icon name="camera" size={16} color={colors.backgroundAlt} />
+            </View>
+          </TouchableOpacity>
           <Text style={[commonStyles.title, { marginBottom: 4 }]}>
             {user.name}
           </Text>
           <Text style={[commonStyles.textSecondary, { marginBottom: 8 }]}>
             {user.role} • {user.troop}
           </Text>
+          {user.bio && (
+            <Text style={[commonStyles.textSecondary, { textAlign: 'center', marginBottom: 8 }]}>
+              {user.bio}
+            </Text>
+          )}
           <Text style={commonStyles.textSecondary}>
             Member since {user.joinDate}
           </Text>
@@ -126,31 +255,40 @@ export default function ProfileScreen() {
         <MenuButton
           icon="person-circle"
           label="Edit Profile"
-          onPress={() => console.log('Edit profile pressed')}
+          onPress={() => setShowEditProfile(true)}
         />
 
         <MenuButton
           icon="notifications"
           label="Notifications"
-          onPress={() => console.log('Notifications pressed')}
+          onPress={handleNotifications}
         />
 
         <MenuButton
           icon="settings"
           label="Settings"
-          onPress={() => console.log('Settings pressed')}
+          onPress={() => setShowSettings(true)}
         />
 
         <MenuButton
           icon="help-circle"
           label="Help & Support"
-          onPress={() => console.log('Help pressed')}
+          onPress={() => {
+            console.log('Help pressed');
+            Alert.alert('Help & Support', 'Contact us at support@scoutpost.com for assistance.');
+          }}
         />
 
         <MenuButton
           icon="information-circle"
           label="About Scoutpost"
-          onPress={() => console.log('About pressed')}
+          onPress={() => {
+            console.log('About pressed');
+            Alert.alert(
+              'About Scoutpost',
+              'Scoutpost v1.0.0\n\nA comprehensive scouting app for managing events, connecting with your troop, and sharing experiences.\n\nBuilt with ❤️ for the scouting community.'
+            );
+          }}
         />
 
         <MenuButton
@@ -170,6 +308,14 @@ export default function ProfileScreen() {
           </Text>
         </View>
       </View>
+
+      {/* Notifications Bottom Sheet */}
+      <SimpleBottomSheet
+        isVisible={showNotifications}
+        onClose={() => setShowNotifications(false)}
+      >
+        <NotificationsContent />
+      </SimpleBottomSheet>
     </ScrollView>
   );
 }
