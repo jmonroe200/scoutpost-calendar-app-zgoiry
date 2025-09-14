@@ -7,6 +7,7 @@ import { router } from 'expo-router';
 import SimpleBottomSheet from './BottomSheet';
 import EditProfileScreen from './EditProfileScreen';
 import SettingsScreen from './SettingsScreen';
+import AdminDashboard from './AdminDashboard';
 
 interface UserProfile {
   name: string;
@@ -18,6 +19,7 @@ interface UserProfile {
   badges: number;
   events: number;
   posts: number;
+  isAdmin?: boolean;
 }
 
 export default function ProfileScreen() {
@@ -31,12 +33,14 @@ export default function ProfileScreen() {
     phone: '+1 (555) 123-4567',
     badges: 15,
     events: 42,
-    posts: 8
+    posts: 8,
+    isAdmin: true // Set to true for demo purposes - in real app, this would come from backend
   });
 
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showAdminDashboard, setShowAdminDashboard] = useState(false);
 
   const handleLogout = () => {
     Alert.alert(
@@ -66,6 +70,11 @@ export default function ProfileScreen() {
   const handleNotifications = () => {
     setShowNotifications(true);
     console.log('Notifications screen opened');
+  };
+
+  const handleAdminDashboard = () => {
+    setShowAdminDashboard(true);
+    console.log('Admin dashboard opened');
   };
 
   const StatCard = ({ icon, label, value, color }: { icon: string; label: string; value: number; color: string }) => (
@@ -179,6 +188,14 @@ export default function ProfileScreen() {
     );
   }
 
+  if (showAdminDashboard) {
+    return (
+      <AdminDashboard
+        onClose={() => setShowAdminDashboard(false)}
+      />
+    );
+  }
+
   return (
     <ScrollView style={{ flex: 1 }}>
       <View style={commonStyles.section}>
@@ -219,6 +236,23 @@ export default function ProfileScreen() {
           <Text style={[commonStyles.textSecondary, { marginBottom: 8 }]}>
             {user.role} • {user.troop}
           </Text>
+          {user.isAdmin && (
+            <View style={{
+              backgroundColor: colors.warning,
+              paddingHorizontal: 12,
+              paddingVertical: 4,
+              borderRadius: 12,
+              marginTop: 4,
+            }}>
+              <Text style={{
+                color: colors.backgroundAlt,
+                fontSize: 12,
+                fontWeight: '600',
+              }}>
+                ADMIN
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Stats */}
@@ -255,6 +289,16 @@ export default function ProfileScreen() {
           label="Notifications"
           onPress={handleNotifications}
         />
+
+        {/* Admin Dashboard - Only show for admin users */}
+        {user.isAdmin && (
+          <MenuButton
+            icon="shield-checkmark"
+            label="Admin Dashboard"
+            onPress={handleAdminDashboard}
+            color={colors.warning}
+          />
+        )}
 
         <MenuButton
           icon="settings"
