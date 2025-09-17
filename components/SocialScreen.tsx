@@ -4,6 +4,7 @@ import { View, Text, ScrollView, TouchableOpacity, TextInput, Image } from 'reac
 import { commonStyles, colors } from '../styles/commonStyles';
 import Icon from './Icon';
 import SimpleBottomSheet from './BottomSheet';
+import CreatePostScreen from './CreatePostScreen';
 
 interface Post {
   id: string;
@@ -73,8 +74,7 @@ export default function SocialScreen() {
     }
   ]);
 
-  const [newPost, setNewPost] = useState('');
-  const [showNewPost, setShowNewPost] = useState(false);
+  const [showCreatePost, setShowCreatePost] = useState(false);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [newComment, setNewComment] = useState('');
 
@@ -92,14 +92,12 @@ export default function SocialScreen() {
     console.log('Toggled like for post:', postId);
   };
 
-  const handleAddPost = () => {
-    if (!newPost.trim()) return;
-
+  const handleCreatePost = (content: string) => {
     const post: Post = {
       id: Date.now().toString(),
       author: 'You',
       avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face',
-      content: newPost,
+      content: content,
       timestamp: 'Just now',
       likes: 0,
       comments: [],
@@ -107,8 +105,6 @@ export default function SocialScreen() {
     };
 
     setPosts([post, ...posts]);
-    setNewPost('');
-    setShowNewPost(false);
     console.log('Added new post:', post);
   };
 
@@ -210,7 +206,7 @@ export default function SocialScreen() {
           <View style={commonStyles.row}>
             <Text style={commonStyles.subtitle}>Community Feed</Text>
             <TouchableOpacity
-              onPress={() => setShowNewPost(true)}
+              onPress={() => setShowCreatePost(true)}
               style={{
                 backgroundColor: colors.primary,
                 paddingHorizontal: 12,
@@ -230,45 +226,12 @@ export default function SocialScreen() {
         </View>
       </ScrollView>
 
-      {/* New Post Bottom Sheet */}
-      <SimpleBottomSheet
-        isVisible={showNewPost}
-        onClose={() => setShowNewPost(false)}
-      >
-        <View style={{ padding: 20 }}>
-          <Text style={[commonStyles.title, { textAlign: 'left', marginBottom: 20 }]}>
-            Create New Post
-          </Text>
-
-          <TextInput
-            style={[commonStyles.input, { height: 120, textAlignVertical: 'top', marginBottom: 20 }]}
-            placeholder="What's happening in your troop?"
-            value={newPost}
-            onChangeText={setNewPost}
-            multiline
-            placeholderTextColor={colors.textSecondary}
-          />
-
-          <View style={{ flexDirection: 'row', gap: 12 }}>
-            <TouchableOpacity
-              style={[commonStyles.button, { flex: 1, backgroundColor: colors.grey }]}
-              onPress={() => setShowNewPost(false)}
-            >
-              <Text style={[commonStyles.buttonText, { color: colors.text }]}>
-                Cancel
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[commonStyles.button, { flex: 1 }]}
-              onPress={handleAddPost}
-            >
-              <Text style={commonStyles.buttonText}>
-                Post
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </SimpleBottomSheet>
+      {/* Full-screen Create Post Modal */}
+      <CreatePostScreen
+        isVisible={showCreatePost}
+        onClose={() => setShowCreatePost(false)}
+        onCreatePost={handleCreatePost}
+      />
 
       {/* Comments Bottom Sheet */}
       <SimpleBottomSheet
