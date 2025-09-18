@@ -3,12 +3,15 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Switch, Alert } from 'react-native';
 import { commonStyles, colors } from '../styles/commonStyles';
 import Icon from './Icon';
+import GitHubIntegration from './GitHubIntegration';
+import SimpleBottomSheet from './BottomSheet';
 
 interface SettingsScreenProps {
   onClose: () => void;
 }
 
 export default function SettingsScreen({ onClose }: SettingsScreenProps) {
+  const [showGitHubIntegration, setShowGitHubIntegration] = useState(false);
   const [settings, setSettings] = useState({
     notifications: {
       push: true,
@@ -186,6 +189,14 @@ export default function SettingsScreen({ onClose }: SettingsScreenProps) {
     </TouchableOpacity>
   );
 
+  if (showGitHubIntegration) {
+    return (
+      <GitHubIntegration
+        onClose={() => setShowGitHubIntegration(false)}
+      />
+    );
+  }
+
   return (
     <View style={commonStyles.container}>
       {/* Header */}
@@ -201,8 +212,19 @@ export default function SettingsScreen({ onClose }: SettingsScreenProps) {
 
       <ScrollView style={{ flex: 1 }}>
         <View style={commonStyles.section}>
+          {/* Integrations */}
+          <Text style={[commonStyles.subtitle, { marginBottom: 12 }]}>Integrations</Text>
+          
+          <ActionItem
+            icon="logo-github"
+            title="GitHub Integration"
+            description="Connect your GitHub account for enhanced features"
+            onPress={() => setShowGitHubIntegration(true)}
+            color="#24292e"
+          />
+
           {/* Notifications */}
-          <Text style={[commonStyles.subtitle, { marginBottom: 12 }]}>Notifications</Text>
+          <Text style={[commonStyles.subtitle, { marginTop: 30, marginBottom: 12 }]}>Notifications</Text>
           
           <SettingItem
             icon="notifications"
