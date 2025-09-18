@@ -30,6 +30,16 @@ export default function EditProfileScreen({ initialProfile, onSave, onCancel }: 
       return;
     }
 
+    if (!profile.troop.trim()) {
+      Alert.alert('Error', 'Troop is required');
+      return;
+    }
+
+    if (!profile.role.trim()) {
+      Alert.alert('Error', 'Role is required');
+      return;
+    }
+
     console.log('Saving profile:', profile);
     onSave(profile);
   };
@@ -195,6 +205,28 @@ export default function EditProfileScreen({ initialProfile, onSave, onCancel }: 
           </View>
 
           <View style={{ marginBottom: 20 }}>
+            <Text style={[commonStyles.text, { marginBottom: 8, fontWeight: '600' }]}>Troop</Text>
+            <TextInput
+              style={commonStyles.input}
+              value={profile.troop}
+              onChangeText={(text) => setProfile(prev => ({ ...prev, troop: text }))}
+              placeholder="Enter your troop (e.g., Troop 123)"
+              placeholderTextColor={colors.textSecondary}
+            />
+          </View>
+
+          <View style={{ marginBottom: 20 }}>
+            <Text style={[commonStyles.text, { marginBottom: 8, fontWeight: '600' }]}>Role</Text>
+            <TextInput
+              style={commonStyles.input}
+              value={profile.role}
+              onChangeText={(text) => setProfile(prev => ({ ...prev, role: text }))}
+              placeholder="Enter your role (e.g., Scout, Scoutmaster)"
+              placeholderTextColor={colors.textSecondary}
+            />
+          </View>
+
+          <View style={{ marginBottom: 30 }}>
             <Text style={[commonStyles.text, { marginBottom: 8, fontWeight: '600' }]}>Phone</Text>
             <TextInput
               style={commonStyles.input}
@@ -203,28 +235,6 @@ export default function EditProfileScreen({ initialProfile, onSave, onCancel }: 
               placeholder="Enter your phone number"
               placeholderTextColor={colors.textSecondary}
               keyboardType="phone-pad"
-            />
-          </View>
-
-          <View style={{ marginBottom: 20 }}>
-            <Text style={[commonStyles.text, { marginBottom: 8, fontWeight: '600' }]}>Troop</Text>
-            <TextInput
-              style={commonStyles.input}
-              value={profile.troop || ''}
-              onChangeText={(text) => setProfile(prev => ({ ...prev, troop: text }))}
-              placeholder="Enter your troop (e.g., Troop 123)"
-              placeholderTextColor={colors.textSecondary}
-            />
-          </View>
-
-          <View style={{ marginBottom: 30 }}>
-            <Text style={[commonStyles.text, { marginBottom: 8, fontWeight: '600' }]}>Role</Text>
-            <TextInput
-              style={commonStyles.input}
-              value={profile.role || ''}
-              onChangeText={(text) => setProfile(prev => ({ ...prev, role: text }))}
-              placeholder="Enter your role (e.g., Scout, Scoutmaster, Parent)"
-              placeholderTextColor={colors.textSecondary}
             />
           </View>
         </View>

@@ -13,68 +13,83 @@ import { UserProfile } from '../lib/types';
 
 export default function ProfileScreen() {
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showAdminDashboard, setShowAdminDashboard] = useState(false);
 
-  // Mock stats - in real app these would come from database
-  const [stats, setStats] = useState({
-    badges: 15,
-    events: 42,
-    posts: 8,
-    isAdmin: false
-  });
-
   useEffect(() => {
-    loadUserProfile();
+    getProfile();
   }, []);
 
-  const loadUserProfile = async () => {
+  const getProfile = async () => {
     try {
-      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      setLoading(true);
+      const { data: { user: authUser } } = await supabase.auth.getUser();
       
-      if (authError || !authUser) {
-        console.error('Auth error:', authError);
+      if (!authUser) {
+        console.log('No authenticated user found');
         router.replace('/');
         return;
       }
 
-      const { data: profile, error: profileError } = await supabase
+      console.log('Fetching profile for user:', authUser.id);
+      
+      const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select(`
+          id,
+          user_id,
+          name,
+          email,
+          troop,
+          role,
+          phone,
+          avatar_url,
+          created_at,
+          updated_at
+        `)
         .eq('user_id', authUser.id)
         .single();
 
-      if (profileError) {
-        console.error('Profile error:', profileError);
-        // If no profile exists, create a basic one
-        const { error: insertError } = await supabase
-          .from('profiles')
-          .insert({
-            user_id: authUser.id,
-            name: authUser.user_metadata?.name || 'Scout User',
-            email: authUser.email || '',
-            troop: '',
-            role: ''
-          });
+      if (error) {
+        console.error('Error fetching profile:', error);
+        // If profile doesn't exist, create one from auth metadata
+        if (error.code === 'PGRST116') {
+          console.log('Profile not found, creating from auth metadata');
+          const { error: insertError } = await supabase
+            .from('profiles')
+            .insert([
+              {
+                user_id: authUser.id,
+                name: authUser.user_metadata?.name || 'Scout User',
+                email: authUser.email || '',
+                troop: authUser.user_metadata?.troop || '',
+                role: authUser.user_metadata?.role || '',
+              },
+            ]);
 
-        if (insertError) {
-          console.error('Profile creation error:', insertError);
-        } else {
-          // Reload profile after creation
-          loadUserProfile();
-          return;
+          if (insertError) {
+            console.error('Error creating profile:', insertError);
+            Alert.alert('Error', 'Failed to create profile');
+          } else {
+            // Fetch the newly created profile
+            getProfile();
+          }
         }
-      } else {
-        setUser(profile);
-        console.log('Profile loaded:', profile);
+        return;
+      }
+
+      if (data) {
+        console.log('Profile loaded:', data);
+        setUser(data as UserProfile);
       }
     } catch (error) {
-      console.error('Error loading profile:', error);
+      console.error('Unexpected error fetching profile:', error);
+      Alert.alert('Error', 'Failed to load profile');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
@@ -88,14 +103,9 @@ export default function ProfileScreen() {
           text: 'Logout',
           style: 'destructive',
           onPress: async () => {
-            try {
-              await supabase.auth.signOut();
-              console.log('User logged out');
-              router.replace('/');
-            } catch (error) {
-              console.error('Logout error:', error);
-              Alert.alert('Error', 'Failed to logout. Please try again.');
-            }
+            console.log('User logging out');
+            await supabase.auth.signOut();
+            router.replace('/');
           }
         }
       ]
@@ -104,13 +114,8 @@ export default function ProfileScreen() {
 
   const handleSaveProfile = async (updatedProfile: UserProfile) => {
     try {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
+      console.log('Updating profile:', updatedProfile);
       
-      if (!authUser) {
-        Alert.alert('Error', 'User not authenticated');
-        return;
-      }
-
       const { error } = await supabase
         .from('profiles')
         .update({
@@ -119,23 +124,24 @@ export default function ProfileScreen() {
           troop: updatedProfile.troop,
           role: updatedProfile.role,
           phone: updatedProfile.phone,
-          avatar_url: updatedProfile.avatar_url
+          avatar_url: updatedProfile.avatar_url,
+          updated_at: new Date().toISOString(),
         })
-        .eq('user_id', authUser.id);
+        .eq('user_id', user?.user_id);
 
       if (error) {
-        console.error('Profile update error:', error);
-        Alert.alert('Error', 'Failed to update profile. Please try again.');
+        console.error('Error updating profile:', error);
+        Alert.alert('Error', 'Failed to update profile');
         return;
       }
 
       setUser(updatedProfile);
       setShowEditProfile(false);
-      console.log('Profile updated:', updatedProfile);
+      console.log('Profile updated successfully');
       Alert.alert('Success', 'Profile updated successfully!');
     } catch (error) {
-      console.error('Error updating profile:', error);
-      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+      console.error('Unexpected error updating profile:', error);
+      Alert.alert('Error', 'Failed to update profile');
     }
   };
 
@@ -242,7 +248,7 @@ export default function ProfileScreen() {
     </View>
   );
 
-  if (isLoading) {
+  if (loading) {
     return (
       <View style={[commonStyles.container, { justifyContent: 'center', alignItems: 'center' }]}>
         <Text style={commonStyles.text}>Loading profile...</Text>
@@ -256,7 +262,7 @@ export default function ProfileScreen() {
         <Text style={commonStyles.text}>Failed to load profile</Text>
         <TouchableOpacity
           style={[commonStyles.button, { marginTop: 20 }]}
-          onPress={loadUserProfile}
+          onPress={getProfile}
         >
           <Text style={commonStyles.buttonText}>Retry</Text>
         </TouchableOpacity>
@@ -289,6 +295,11 @@ export default function ProfileScreen() {
       />
     );
   }
+
+  // Check if user is admin based on role
+  const isAdmin = user.role?.toLowerCase().includes('admin') || 
+                  user.role?.toLowerCase().includes('scoutmaster') ||
+                  user.role?.toLowerCase().includes('leader');
 
   return (
     <ScrollView style={{ flex: 1 }}>
@@ -328,9 +339,9 @@ export default function ProfileScreen() {
             {user.name}
           </Text>
           <Text style={[commonStyles.textSecondary, { marginBottom: 8 }]}>
-            {user.role && user.troop ? `${user.role} • ${user.troop}` : (user.role || user.troop || 'Complete your profile')}
+            {user.role} • {user.troop}
           </Text>
-          {stats.isAdmin && (
+          {isAdmin && (
             <View style={{
               backgroundColor: colors.warning,
               paddingHorizontal: 12,
@@ -354,19 +365,19 @@ export default function ProfileScreen() {
           <StatCard
             icon="ribbon"
             label="Badges"
-            value={stats.badges}
+            value={15}
             color={colors.warning}
           />
           <StatCard
             icon="calendar"
             label="Events"
-            value={stats.events}
+            value={42}
             color={colors.primary}
           />
           <StatCard
             icon="chatbubbles"
             label="Posts"
-            value={stats.posts}
+            value={8}
             color={colors.info}
           />
         </View>
@@ -385,7 +396,7 @@ export default function ProfileScreen() {
         />
 
         {/* Admin Dashboard - Only show for admin users */}
-        {stats.isAdmin && (
+        {isAdmin && (
           <MenuButton
             icon="shield-checkmark"
             label="Admin Dashboard"

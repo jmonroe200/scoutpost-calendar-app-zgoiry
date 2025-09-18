@@ -1,12 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { View, TouchableOpacity, Text } from 'react-native';
-import { commonStyles, colors } from '../styles/commonStyles';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import CalendarScreen from '../components/CalendarScreen';
-import ProfileScreen from '../components/ProfileScreen';
-import SocialScreen from '../components/SocialScreen';
+import { commonStyles, colors } from '../styles/commonStyles';
 import Icon from '../components/Icon';
+import CalendarScreen from '../components/CalendarScreen';
+import SocialScreen from '../components/SocialScreen';
+import ProfileScreen from '../components/ProfileScreen';
 import { supabase } from '../lib/supabase';
 import { router } from 'expo-router';
 
@@ -14,30 +14,33 @@ type TabType = 'calendar' | 'social' | 'profile';
 
 export default function MainScreen() {
   const [activeTab, setActiveTab] = useState<TabType>('calendar');
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const checkAuth = async () => {
-    try {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      
-      if (error || !user) {
-        console.log('User not authenticated, redirecting to login');
+    // Check authentication state
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.log('No session found, redirecting to login');
         router.replace('/');
         return;
       }
+      console.log('User authenticated:', session.user.email);
+      setLoading(false);
+    };
 
-      console.log('User authenticated:', user.email);
-    } catch (error) {
-      console.error('Auth check error:', error);
-      router.replace('/');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    checkAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state changed:', event, session?.user?.email);
+      if (event === 'SIGNED_OUT' || !session) {
+        router.replace('/');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const renderContent = () => {
     switch (activeTab) {
@@ -55,8 +58,14 @@ export default function MainScreen() {
   const TabButton = ({ tab, icon, label }: { tab: TabType; icon: string; label: string }) => (
     <TouchableOpacity
       style={[
-        commonStyles.tabButton,
-        activeTab === tab && commonStyles.tabButtonActive
+        commonStyles.centerColumn,
+        { 
+          flex: 1, 
+          paddingVertical: 12,
+          backgroundColor: activeTab === tab ? colors.primary + '20' : 'transparent',
+          borderRadius: 12,
+          marginHorizontal: 4,
+        }
       ]}
       onPress={() => setActiveTab(tab)}
     >
@@ -66,15 +75,19 @@ export default function MainScreen() {
         color={activeTab === tab ? colors.primary : colors.text} 
       />
       <Text style={[
-        commonStyles.tabButtonText,
-        { color: activeTab === tab ? colors.primary : colors.text }
+        commonStyles.textSmall, 
+        { 
+          marginTop: 4,
+          color: activeTab === tab ? colors.primary : colors.text,
+          fontWeight: activeTab === tab ? '600' : '400'
+        }
       ]}>
         {label}
       </Text>
     </TouchableOpacity>
   );
 
-  if (isLoading) {
+  if (loading) {
     return (
       <SafeAreaView style={[commonStyles.container, { justifyContent: 'center', alignItems: 'center' }]}>
         <Text style={commonStyles.text}>Loading...</Text>
@@ -85,10 +98,13 @@ export default function MainScreen() {
   return (
     <SafeAreaView style={commonStyles.container}>
       {/* Header */}
-      <View style={commonStyles.header}>
+      <View style={[commonStyles.row, { padding: 20, paddingBottom: 10 }]}>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <Icon name="home" size={24} color="#DC2626" style={{ marginRight: 8 }} />
-          <Text style={[commonStyles.headerTitle, { fontFamily: 'Sansita_700Bold' }]}>
+          <Text style={[commonStyles.title, { 
+            fontFamily: 'Sansita_700Bold',
+            color: colors.primary 
+          }]}>
             Scoutpost
           </Text>
         </View>
@@ -100,7 +116,15 @@ export default function MainScreen() {
       </View>
 
       {/* Bottom Navigation */}
-      <View style={commonStyles.bottomNav}>
+      <View style={[
+        commonStyles.row, 
+        { 
+          padding: 16,
+          backgroundColor: colors.backgroundAlt,
+          borderTopWidth: 1,
+          borderTopColor: colors.border,
+        }
+      ]}>
         <TabButton tab="calendar" icon="calendar" label="Calendar" />
         <TabButton tab="social" icon="chatbubbles" label="Community" />
         <TabButton tab="profile" icon="person" label="Profile" />

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Text, View, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { commonStyles, colors } from '../styles/commonStyles';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,91 +14,123 @@ export default function LoginScreen() {
   const [name, setName] = useState('');
   const [troop, setTroop] = useState('');
   const [role, setRole] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleAuth = async () => {
-    console.log('Auth attempt:', { isLogin, email, name, troop, role });
-    
-    if (!email || !password) {
-      Alert.alert('Error', 'Please fill in email and password');
+  useEffect(() => {
+    // Check if user is already logged in
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        console.log('User already logged in, redirecting to main');
+        router.replace('/main');
+      }
+    };
+    checkSession();
+  }, []);
+
+  const signUpWithEmail = async () => {
+    if (!email || !password || !name || !troop || !role) {
+      Alert.alert('Error', 'Please fill in all fields');
       return;
     }
 
-    if (!isLogin && (!name || !troop || !role)) {
-      Alert.alert('Error', 'Please fill in all fields for signup');
-      return;
-    }
-
-    setIsLoading(true);
+    setLoading(true);
+    console.log('Attempting signup with:', { email, name, troop, role });
 
     try {
-      if (isLogin) {
-        // Sign in
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
+      const { data, error } = await supabase.auth.signUp({
+        email: email,
+        password: password,
+        options: {
+          emailRedirectTo: 'https://natively.dev/email-confirmed',
+          data: {
+            name: name,
+            troop: troop,
+            role: role,
+          },
+        },
+      });
 
-        if (error) {
-          console.error('Login error:', error);
-          Alert.alert('Login Error', error.message);
-          return;
-        }
+      if (error) {
+        console.error('Signup error:', error);
+        Alert.alert('Signup Error', error.message);
+        return;
+      }
 
-        console.log('Login successful:', data);
-        router.replace('/main');
-      } else {
-        // Sign up
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: 'https://natively.dev/email-confirmed'
-          }
-        });
-
-        if (error) {
-          console.error('Signup error:', error);
-          Alert.alert('Signup Error', error.message);
-          return;
-        }
-
-        if (data.user) {
-          // Create profile with troop and role
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .insert({
+      if (data.user) {
+        console.log('Signup successful:', data.user);
+        
+        // Create profile record
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert([
+            {
               user_id: data.user.id,
-              name,
-              email,
-              troop,
-              role,
-            });
+              name: name,
+              email: email,
+              troop: troop,
+              role: role,
+            },
+          ]);
 
-          if (profileError) {
-            console.error('Profile creation error:', profileError);
-            Alert.alert('Profile Error', 'Account created but profile setup failed. Please complete your profile in settings.');
-          } else {
-            console.log('Profile created successfully');
-          }
-
-          Alert.alert(
-            'Registration Successful!', 
-            'Please check your email to verify your account before signing in.',
-            [
-              {
-                text: 'OK',
-                onPress: () => setIsLogin(true)
-              }
-            ]
-          );
+        if (profileError) {
+          console.error('Profile creation error:', profileError);
+        } else {
+          console.log('Profile created successfully');
         }
+
+        Alert.alert(
+          'Check your email',
+          'We sent you a confirmation link. Please check your email and click the link to verify your account.',
+          [{ text: 'OK' }]
+        );
       }
     } catch (error) {
-      console.error('Auth error:', error);
+      console.error('Unexpected error during signup:', error);
       Alert.alert('Error', 'An unexpected error occurred. Please try again.');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
+    }
+  };
+
+  const signInWithEmail = async () => {
+    if (!email || !password) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+
+    setLoading(true);
+    console.log('Attempting signin with:', { email });
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: password,
+      });
+
+      if (error) {
+        console.error('Signin error:', error);
+        Alert.alert('Sign In Error', error.message);
+        return;
+      }
+
+      if (data.user) {
+        console.log('Signin successful:', data.user);
+        router.replace('/main');
+      }
+    } catch (error) {
+      console.error('Unexpected error during signin:', error);
+      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAuth = () => {
+    if (isLogin) {
+      signInWithEmail();
+    } else {
+      signUpWithEmail();
     }
   };
 
@@ -142,7 +174,7 @@ export default function LoginScreen() {
                 value={name}
                 onChangeText={setName}
                 placeholderTextColor={colors.textSecondary}
-                editable={!isLoading}
+                editable={!loading}
               />
             )}
 
@@ -154,7 +186,7 @@ export default function LoginScreen() {
               keyboardType="email-address"
               autoCapitalize="none"
               placeholderTextColor={colors.textSecondary}
-              editable={!isLoading}
+              editable={!loading}
             />
 
             <TextInput
@@ -164,7 +196,7 @@ export default function LoginScreen() {
               onChangeText={setPassword}
               secureTextEntry
               placeholderTextColor={colors.textSecondary}
-              editable={!isLoading}
+              editable={!loading}
             />
 
             {!isLogin && (
@@ -175,34 +207,34 @@ export default function LoginScreen() {
                   value={troop}
                   onChangeText={setTroop}
                   placeholderTextColor={colors.textSecondary}
-                  editable={!isLoading}
+                  editable={!loading}
                 />
 
                 <TextInput
                   style={[commonStyles.input, { marginBottom: 24 }]}
-                  placeholder="Role (e.g., Scout, Scoutmaster, Parent)"
+                  placeholder="Role (e.g., Scout, Scoutmaster, Assistant)"
                   value={role}
                   onChangeText={setRole}
                   placeholderTextColor={colors.textSecondary}
-                  editable={!isLoading}
+                  editable={!loading}
                 />
               </>
             )}
 
             <TouchableOpacity
-              style={[commonStyles.button, isLoading && { opacity: 0.6 }]}
+              style={[commonStyles.button, loading && { opacity: 0.6 }]}
               onPress={handleAuth}
-              disabled={isLoading}
+              disabled={loading}
             >
               <Text style={commonStyles.buttonText}>
-                {isLoading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Sign Up')}
+                {loading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Sign Up')}
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={{ marginTop: 16, alignItems: 'center' }}
               onPress={() => setIsLogin(!isLogin)}
-              disabled={isLoading}
+              disabled={loading}
             >
               <Text style={[commonStyles.textSecondary, { textAlign: 'center' }]}>
                 {isLogin ? "Don't have an account? " : "Already have an account? "}
