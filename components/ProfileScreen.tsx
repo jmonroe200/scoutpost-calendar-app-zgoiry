@@ -363,12 +363,6 @@ export default function ProfileScreen() {
         {/* Stats */}
         <View style={{ flexDirection: 'row', marginBottom: 20 }}>
           <StatCard
-            icon="ribbon"
-            label="Badges"
-            value={15}
-            color={colors.warning}
-          />
-          <StatCard
             icon="calendar"
             label="Events"
             value={42}
