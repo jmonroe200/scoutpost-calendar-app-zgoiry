@@ -117,6 +117,119 @@ export default function SocialScreen() {
     });
   };
 
+  const renderStyledPreview = (text: string, maxLines: number = 3) => {
+    const lines = text.split('\n').filter(line => line.trim());
+    const previewLines = lines.slice(0, maxLines);
+    
+    return previewLines.map((line, lineIndex) => {
+      // Handle headings
+      if (line.startsWith('# ')) {
+        return (
+          <Text key={lineIndex} style={[commonStyles.text, { 
+            fontSize: 16, 
+            fontWeight: 'bold', 
+            marginBottom: 6,
+            color: colors.primary 
+          }]} numberOfLines={1}>
+            {line.substring(2)}
+          </Text>
+        );
+      }
+
+      // Handle bullet points
+      if (line.startsWith('• ')) {
+        return (
+          <View key={lineIndex} style={{ flexDirection: 'row', marginBottom: 4 }}>
+            <Text style={[commonStyles.text, { marginRight: 8, color: colors.primary }]}>•</Text>
+            <Text style={[commonStyles.text, { flex: 1 }]} numberOfLines={1}>
+              {renderInlineStylesPreview(line.substring(2))}
+            </Text>
+          </View>
+        );
+      }
+
+      // Handle regular text with inline styles
+      if (line.trim()) {
+        return (
+          <Text key={lineIndex} style={[commonStyles.text, { marginBottom: 6, lineHeight: 20 }]} numberOfLines={2}>
+            {renderInlineStylesPreview(line)}
+          </Text>
+        );
+      }
+      return null;
+    }).filter(Boolean);
+  };
+
+  const renderInlineStylesPreview = (text: string) => {
+    const elements: React.ReactNode[] = [];
+    let remainingText = text;
+    let keyIndex = 0;
+
+    // Process bold text (**text**)
+    while (remainingText.includes('**')) {
+      const startIndex = remainingText.indexOf('**');
+      const endIndex = remainingText.indexOf('**', startIndex + 2);
+      
+      if (endIndex === -1) break;
+
+      // Add text before bold
+      if (startIndex > 0) {
+        elements.push(remainingText.substring(0, startIndex));
+      }
+
+      // Add bold text
+      const boldText = remainingText.substring(startIndex + 2, endIndex);
+      elements.push(
+        <Text key={keyIndex++} style={{ fontWeight: 'bold' }}>
+          {boldText}
+        </Text>
+      );
+
+      remainingText = remainingText.substring(endIndex + 2);
+    }
+
+    // Process italic text (*text*) on remaining text
+    let processedText = remainingText;
+    remainingText = '';
+    let tempElements: React.ReactNode[] = [];
+
+    while (processedText.includes('*')) {
+      const startIndex = processedText.indexOf('*');
+      const endIndex = processedText.indexOf('*', startIndex + 1);
+      
+      if (endIndex === -1) break;
+
+      // Add text before italic
+      if (startIndex > 0) {
+        tempElements.push(processedText.substring(0, startIndex));
+      }
+
+      // Add italic text
+      const italicText = processedText.substring(startIndex + 1, endIndex);
+      tempElements.push(
+        <Text key={keyIndex++} style={{ fontStyle: 'italic' }}>
+          {italicText}
+        </Text>
+      );
+
+      processedText = processedText.substring(endIndex + 1);
+    }
+
+    // Add remaining text
+    if (processedText) {
+      tempElements.push(processedText);
+    }
+
+    elements.push(...tempElements);
+
+    // If no styling was applied, return the original text
+    if (elements.length === 0) {
+      return remainingText || text;
+    }
+
+    return elements;
+  };
+
   const handleLike = (postId: string) => {
     setPosts(posts.map(post => {
       if (post.id === postId) {
@@ -240,20 +353,25 @@ export default function SocialScreen() {
 
   const NewsletterCard = ({ newsletter }: { newsletter: Newsletter }) => (
     <TouchableOpacity
-      style={[commonStyles.card, { backgroundColor: colors.backgroundAlt, borderLeftWidth: 4, borderLeftColor: colors.primary }]}
+      style={[commonStyles.card, { 
+        backgroundColor: colors.backgroundAlt, 
+        borderLeftWidth: 4, 
+        borderLeftColor: colors.primary,
+        borderRadius: 12,
+      }]}
       onPress={() => setSelectedNewsletter(newsletter)}
       activeOpacity={0.7}
     >
-      <View style={[commonStyles.row, { marginBottom: 8 }]}>
+      <View style={[commonStyles.row, { marginBottom: 12 }]}>
         <Icon name="mail" size={20} color={colors.primary} />
         <Text style={[commonStyles.text, { fontWeight: '600', marginLeft: 8, flex: 1 }]}>
           {newsletter.title}
         </Text>
         <View style={{
           backgroundColor: colors.success,
-          paddingHorizontal: 6,
-          paddingVertical: 2,
-          borderRadius: 4,
+          paddingHorizontal: 8,
+          paddingVertical: 3,
+          borderRadius: 6,
         }}>
           <Text style={{
             color: colors.backgroundAlt,
@@ -265,11 +383,11 @@ export default function SocialScreen() {
         </View>
       </View>
       
-      <Text style={[commonStyles.text, { marginBottom: 12, lineHeight: 20 }]} numberOfLines={3}>
-        {newsletter.content}
-      </Text>
+      <View style={{ marginBottom: 12 }}>
+        {renderStyledPreview(newsletter.content, 4)}
+      </View>
       
-      <View style={commonStyles.row}>
+      <View style={[commonStyles.row, { marginBottom: 8 }]}>
         <Text style={commonStyles.textSecondary}>
           By {newsletter.author_name}
         </Text>
@@ -278,8 +396,8 @@ export default function SocialScreen() {
         </Text>
       </View>
       
-      <View style={[commonStyles.row, { marginTop: 8, justifyContent: 'center' }]}>
-        <Text style={[commonStyles.textSecondary, { fontSize: 12 }]}>
+      <View style={[commonStyles.row, { justifyContent: 'center', paddingTop: 8, borderTopWidth: 1, borderTopColor: colors.border }]}>
+        <Text style={[commonStyles.textSecondary, { fontSize: 12, fontWeight: '500' }]}>
           Tap to read full newsletter
         </Text>
         <Icon name="chevron-forward" size={14} color={colors.textSecondary} style={{ marginLeft: 4 }} />

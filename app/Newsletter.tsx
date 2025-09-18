@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { commonStyles, colors } from '../styles/commonStyles';
 import Icon from '../components/Icon';
+import TextStyleEditor from '../components/TextStyleEditor';
 import { supabase } from '../lib/supabase';
 import { UserProfile } from '../lib/types';
 
@@ -240,6 +241,49 @@ export default function NewsletterScreen() {
     }
   };
 
+  const renderStyledPreview = (text: string) => {
+    const lines = text.split('\n');
+    
+    return lines.slice(0, 3).map((line, lineIndex) => {
+      // Handle headings
+      if (line.startsWith('# ')) {
+        return (
+          <Text key={lineIndex} style={[commonStyles.text, { 
+            fontSize: 16, 
+            fontWeight: 'bold', 
+            marginBottom: 4,
+            color: colors.primary 
+          }]}>
+            {line.substring(2)}
+          </Text>
+        );
+      }
+
+      // Handle bullet points
+      if (line.startsWith('• ')) {
+        return (
+          <View key={lineIndex} style={{ flexDirection: 'row', marginBottom: 4 }}>
+            <Text style={[commonStyles.textSecondary, { marginRight: 6 }]}>•</Text>
+            <Text style={[commonStyles.textSecondary, { flex: 1 }]} numberOfLines={1}>
+              {line.substring(2).replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1')}
+            </Text>
+          </View>
+        );
+      }
+
+      // Handle regular text (strip formatting for preview)
+      const cleanText = line.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1');
+      if (cleanText.trim()) {
+        return (
+          <Text key={lineIndex} style={[commonStyles.textSecondary, { marginBottom: 4 }]} numberOfLines={1}>
+            {cleanText}
+          </Text>
+        );
+      }
+      return null;
+    }).filter(Boolean);
+  };
+
   if (loading) {
     return (
       <SafeAreaView style={[commonStyles.container, { justifyContent: 'center', alignItems: 'center' }]}>
@@ -270,94 +314,95 @@ export default function NewsletterScreen() {
           </View>
         </View>
 
-        <ScrollView style={{ flex: 1 }}>
-          <View style={commonStyles.section}>
-            {/* Title Input */}
-            <View style={{ marginBottom: 20 }}>
-              <Text style={[commonStyles.text, { fontWeight: '600', marginBottom: 8 }]}>
-                Newsletter Title
-              </Text>
-              <TextInput
-                style={[commonStyles.input, { fontSize: 16 }]}
-                placeholder="Enter newsletter title..."
-                value={title}
-                onChangeText={setTitle}
-                placeholderTextColor={colors.textSecondary}
-                multiline={false}
-              />
-            </View>
+        <View style={{ flex: 1 }}>
+          {/* Title Input */}
+          <View style={{ 
+            paddingHorizontal: 20, 
+            paddingVertical: 16,
+            borderBottomWidth: 1,
+            borderBottomColor: colors.border,
+            backgroundColor: colors.background,
+          }}>
+            <Text style={[commonStyles.text, { fontWeight: '600', marginBottom: 8 }]}>
+              Newsletter Title
+            </Text>
+            <TextInput
+              style={[commonStyles.input, { fontSize: 16, marginBottom: 0 }]}
+              placeholder="Enter newsletter title..."
+              value={title}
+              onChangeText={setTitle}
+              placeholderTextColor={colors.textSecondary}
+              multiline={false}
+            />
+          </View>
 
-            {/* Content Input */}
-            <View style={{ marginBottom: 20 }}>
-              <Text style={[commonStyles.text, { fontWeight: '600', marginBottom: 8 }]}>
+          {/* Content Editor */}
+          <View style={{ flex: 1 }}>
+            <View style={{
+              paddingHorizontal: 20,
+              paddingVertical: 12,
+              backgroundColor: colors.backgroundAlt,
+              borderBottomWidth: 1,
+              borderBottomColor: colors.border,
+            }}>
+              <Text style={[commonStyles.text, { fontWeight: '600' }]}>
                 Newsletter Content
               </Text>
-              <TextInput
-                style={[commonStyles.input, { 
-                  minHeight: 300,
-                  textAlignVertical: 'top',
-                  fontSize: 16,
-                  lineHeight: 24,
-                }]}
-                placeholder="Write your newsletter content here...&#10;&#10;You can include:&#10;• Upcoming events&#10;• Troop announcements&#10;• Merit badge opportunities&#10;• Community service projects&#10;• Recognition and achievements&#10;• Important reminders"
-                value={content}
-                onChangeText={setContent}
-                placeholderTextColor={colors.textSecondary}
-                multiline={true}
-              />
             </View>
+            
+            <TextStyleEditor
+              value={content}
+              onChangeText={setContent}
+              placeholder="Write your newsletter content here...
 
-            {/* Action Buttons */}
-            <View style={{ flexDirection: 'row', gap: 12 }}>
-              <TouchableOpacity
-                style={[commonStyles.button, { 
-                  flex: 1,
-                  backgroundColor: colors.textSecondary,
-                }]}
-                onPress={() => handleSaveNewsletter('draft')}
-              >
-                <Text style={[commonStyles.buttonText, { color: colors.backgroundAlt }]}>
-                  Save as Draft
-                </Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={[commonStyles.button, { flex: 1 }]}
-                onPress={() => handleSaveNewsletter('published')}
-              >
-                <Text style={commonStyles.buttonText}>
-                  Publish Newsletter
-                </Text>
-              </TouchableOpacity>
-            </View>
+Use the formatting toolbar above to style your text:
+• **Bold text** for emphasis
+• *Italic text* for subtle emphasis  
+• # Headings for section titles
+• • Bullet points for lists
 
-            {/* Preview Section */}
-            {(title.trim() || content.trim()) && (
-              <View style={{ marginTop: 30 }}>
-                <Text style={[commonStyles.subtitle, { marginBottom: 16 }]}>
-                  Preview
-                </Text>
-                <View style={[commonStyles.card, { backgroundColor: colors.backgroundAlt }]}>
-                  {title.trim() && (
-                    <Text style={[commonStyles.title, { marginBottom: 12, fontSize: 20 }]}>
-                      {title}
-                    </Text>
-                  )}
-                  {content.trim() && (
-                    <Text style={[commonStyles.text, { lineHeight: 24 }]}>
-                      {content}
-                    </Text>
-                  )}
-                  <View style={{ marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: colors.border }}>
-                    <Text style={commonStyles.textSecondary}>
-                      By {user?.name} • {formatDate(new Date().toISOString())}
-                    </Text>
-                  </View>
-                </View>
-              </View>
-            )}
+Example:
+# Weekly Update
+This week we had an amazing **camping trip**! 
+
+• Great weather
+• Fun activities  
+• *Excellent* teamwork"
+            />
           </View>
-        </ScrollView>
+
+          {/* Action Buttons */}
+          <View style={{
+            flexDirection: 'row',
+            gap: 12,
+            paddingHorizontal: 20,
+            paddingVertical: 16,
+            backgroundColor: colors.backgroundAlt,
+            borderTopWidth: 1,
+            borderTopColor: colors.border,
+          }}>
+            <TouchableOpacity
+              style={[commonStyles.button, { 
+                flex: 1,
+                backgroundColor: colors.textSecondary,
+              }]}
+              onPress={() => handleSaveNewsletter('draft')}
+            >
+              <Text style={[commonStyles.buttonText, { color: colors.backgroundAlt }]}>
+                Save as Draft
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={[commonStyles.button, { flex: 1 }]}
+              onPress={() => handleSaveNewsletter('published')}
+            >
+              <Text style={commonStyles.buttonText}>
+                Publish Newsletter
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </SafeAreaView>
     );
   }
@@ -399,16 +444,16 @@ export default function NewsletterScreen() {
             }]}
             onPress={handleCreateNewsletter}
           >
-            <Icon name="add-circle" size={48} color={colors.primary} />
+            <Icon name="create" size={48} color={colors.primary} />
             <Text style={[commonStyles.text, { 
               marginTop: 12,
               fontWeight: '600',
               color: colors.primary,
             }]}>
-              Create New Newsletter
+              Create Styled Newsletter
             </Text>
             <Text style={[commonStyles.textSecondary, { textAlign: 'center', marginTop: 4 }]}>
-              Share weekly updates with your troop
+              Use rich text formatting to create engaging newsletters
             </Text>
           </TouchableOpacity>
 
@@ -438,12 +483,9 @@ export default function NewsletterScreen() {
                       </View>
                     </View>
                     
-                    <Text 
-                      style={[commonStyles.textSecondary, { marginBottom: 8 }]}
-                      numberOfLines={2}
-                    >
-                      {newsletter.content}
-                    </Text>
+                    <View style={{ marginBottom: 8 }}>
+                      {renderStyledPreview(newsletter.content)}
+                    </View>
                     
                     <View style={commonStyles.row}>
                       <Text style={commonStyles.textSecondary}>
@@ -502,7 +544,7 @@ export default function NewsletterScreen() {
                 No newsletters yet
               </Text>
               <Text style={[commonStyles.textSecondary, { textAlign: 'center', marginTop: 4 }]}>
-                Create your first newsletter to share updates with your troop
+                Create your first styled newsletter to share updates with your troop
               </Text>
             </View>
           )}

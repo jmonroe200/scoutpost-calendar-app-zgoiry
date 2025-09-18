@@ -65,7 +65,7 @@ export const commonStyles = StyleSheet.create({
     marginBottom: 10
   },
   subtitle: {
-    fontSize: 18,
+    fontSize: 24,
     fontWeight: '600',
     color: colors.text,
     marginBottom: 8,

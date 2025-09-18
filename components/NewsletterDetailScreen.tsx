@@ -25,9 +25,122 @@ export default function NewsletterDetailScreen({ newsletter, isVisible, onClose 
     });
   };
 
-  const formatContent = (content: string) => {
-    // Split content by double line breaks to create paragraphs
-    return content.split('\n\n').filter(paragraph => paragraph.trim().length > 0);
+  const renderStyledContent = (text: string) => {
+    const lines = text.split('\n');
+    
+    return lines.map((line, lineIndex) => {
+      // Skip empty lines
+      if (!line.trim()) {
+        return <View key={lineIndex} style={{ height: 12 }} />;
+      }
+
+      // Handle headings
+      if (line.startsWith('# ')) {
+        return (
+          <Text key={lineIndex} style={[commonStyles.text, { 
+            fontSize: 22, 
+            fontWeight: 'bold', 
+            marginBottom: 16,
+            marginTop: lineIndex > 0 ? 8 : 0,
+            color: colors.primary 
+          }]}>
+            {line.substring(2)}
+          </Text>
+        );
+      }
+
+      // Handle bullet points
+      if (line.startsWith('• ')) {
+        return (
+          <View key={lineIndex} style={{ flexDirection: 'row', marginBottom: 12, paddingLeft: 8 }}>
+            <Text style={[commonStyles.text, { marginRight: 12, color: colors.primary }]}>•</Text>
+            <Text style={[commonStyles.text, { flex: 1, lineHeight: 24 }]}>
+              {renderInlineStyles(line.substring(2))}
+            </Text>
+          </View>
+        );
+      }
+
+      // Handle regular paragraphs with inline styles
+      return (
+        <Text key={lineIndex} style={[commonStyles.text, { 
+          marginBottom: 16,
+          lineHeight: 24 
+        }]}>
+          {renderInlineStyles(line)}
+        </Text>
+      );
+    });
+  };
+
+  const renderInlineStyles = (text: string) => {
+    const elements: React.ReactNode[] = [];
+    let remainingText = text;
+    let keyIndex = 0;
+
+    // Process bold text (**text**)
+    while (remainingText.includes('**')) {
+      const startIndex = remainingText.indexOf('**');
+      const endIndex = remainingText.indexOf('**', startIndex + 2);
+      
+      if (endIndex === -1) break;
+
+      // Add text before bold
+      if (startIndex > 0) {
+        elements.push(remainingText.substring(0, startIndex));
+      }
+
+      // Add bold text
+      const boldText = remainingText.substring(startIndex + 2, endIndex);
+      elements.push(
+        <Text key={keyIndex++} style={{ fontWeight: 'bold', color: colors.text }}>
+          {boldText}
+        </Text>
+      );
+
+      remainingText = remainingText.substring(endIndex + 2);
+    }
+
+    // Process italic text (*text*) on remaining text
+    let processedText = remainingText;
+    remainingText = '';
+    let tempElements: React.ReactNode[] = [];
+
+    while (processedText.includes('*')) {
+      const startIndex = processedText.indexOf('*');
+      const endIndex = processedText.indexOf('*', startIndex + 1);
+      
+      if (endIndex === -1) break;
+
+      // Add text before italic
+      if (startIndex > 0) {
+        tempElements.push(processedText.substring(0, startIndex));
+      }
+
+      // Add italic text
+      const italicText = processedText.substring(startIndex + 1, endIndex);
+      tempElements.push(
+        <Text key={keyIndex++} style={{ fontStyle: 'italic', color: colors.text }}>
+          {italicText}
+        </Text>
+      );
+
+      processedText = processedText.substring(endIndex + 1);
+    }
+
+    // Add remaining text
+    if (processedText) {
+      tempElements.push(processedText);
+    }
+
+    elements.push(...tempElements);
+
+    // If no styling was applied, return the original text
+    if (elements.length === 0) {
+      return remainingText || text;
+    }
+
+    return elements;
   };
 
   return (
@@ -112,22 +225,9 @@ export default function NewsletterDetailScreen({ newsletter, isVisible, onClose 
             </View>
           </View>
 
-          {/* Newsletter Content */}
-          <View style={commonStyles.card}>
-            {formatContent(newsletter.content).map((paragraph, index) => (
-              <Text
-                key={index}
-                style={[
-                  commonStyles.text,
-                  {
-                    lineHeight: 24,
-                    marginBottom: index < formatContent(newsletter.content).length - 1 ? 16 : 0,
-                  }
-                ]}
-              >
-                {paragraph.trim()}
-              </Text>
-            ))}
+          {/* Newsletter Content with Styling */}
+          <View style={[commonStyles.card, { padding: 20 }]}>
+            {renderStyledContent(newsletter.content)}
           </View>
 
           {/* Footer */}
