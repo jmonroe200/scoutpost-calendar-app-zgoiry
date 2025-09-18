@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Text, View, TouchableOpacity, TextInput, Alert } from 'react-native';
+import { Text, View, TouchableOpacity, TextInput, Alert, Image } from 'react-native';
 import { commonStyles, colors } from '../styles/commonStyles';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -147,7 +147,11 @@ export default function LoginScreen() {
             justifyContent: 'center',
             marginBottom: 20,
           }}>
-            <Icon name="compass" size={40} color={colors.backgroundAlt} />
+            <Image 
+              source={require('../assets/images/006a9a79-1c40-4999-ba26-8d0a58a09b1d.jpeg')}
+              style={{ width: 40, height: 40 }}
+              resizeMode="contain"
+            />
           </View>
           <Text style={[commonStyles.title, { 
             fontSize: 32, 

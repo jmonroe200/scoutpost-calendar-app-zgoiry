@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { View, TouchableOpacity, Text } from 'react-native';
+import { View, TouchableOpacity, Text, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { commonStyles, colors } from '../styles/commonStyles';
 import Icon from '../components/Icon';
@@ -103,7 +103,11 @@ export default function MainScreen() {
       {/* Header */}
       <View style={[commonStyles.row, { padding: 20, paddingBottom: 10 }]}>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Icon name="home" size={24} color="#DC2626" style={{ marginRight: 8 }} />
+          <Image 
+            source={require('../assets/images/006a9a79-1c40-4999-ba26-8d0a58a09b1d.jpeg')}
+            style={{ width: 24, height: 24, marginRight: 8 }}
+            resizeMode="contain"
+          />
           <Text style={[commonStyles.title, { 
             fontFamily: 'Sansita_700Bold',
             color: colors.primary 
