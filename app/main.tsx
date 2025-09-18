@@ -64,7 +64,13 @@ export default function MainScreen() {
           borderBottomColor: colors.border,
           backgroundColor: colors.backgroundAlt,
         }}>
-          <Text style={[commonStyles.title, { fontSize: 28, color: colors.primary, textAlign: 'left', marginBottom: 0 }]}>
+          <Text style={[commonStyles.title, { 
+            fontSize: 28, 
+            color: colors.primary, 
+            textAlign: 'left', 
+            marginBottom: 0,
+            fontFamily: 'Sansita_700Bold'
+          }]}>
             Scoutpost
           </Text>
         </View>
