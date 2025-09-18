@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, Image } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, Image, Alert } from 'react-native';
 import { commonStyles, colors } from '../styles/commonStyles';
 import Icon from './Icon';
 import SimpleBottomSheet from './BottomSheet';
@@ -11,82 +11,58 @@ import { Newsletter } from '../lib/types';
 
 interface Post {
   id: string;
-  author: string;
-  avatar: string;
+  author_id: string;
+  author_name: string;
   content: string;
-  image?: string;
-  timestamp: string;
-  likes: number;
-  comments: Comment[];
-  isLiked: boolean;
+  image_url?: string;
+  likes_count: number;
+  comments_count: number;
+  created_at: string;
+  updated_at: string;
+  isLiked?: boolean;
 }
 
 interface Comment {
   id: string;
-  author: string;
+  post_id: string;
+  author_id: string;
+  author_name: string;
   content: string;
-  timestamp: string;
+  created_at: string;
 }
 
 export default function SocialScreen() {
   const [newsletters, setNewsletters] = useState<Newsletter[]>([]);
   const [showNewsletters, setShowNewsletters] = useState(true);
-  const [posts, setPosts] = useState<Post[]>([
-    {
-      id: '1',
-      author: 'Alex Thompson',
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
-      content: 'Just finished our winter camping trip! The scouts showed incredible resilience in the cold weather. Proud of everyone who participated! 🏕️❄️',
-      image: 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=400&h=300&fit=crop',
-      timestamp: '2 hours ago',
-      likes: 12,
-      comments: [
-        {
-          id: '1',
-          author: 'Sarah Miller',
-          content: 'Amazing photos! The scouts look so happy despite the cold.',
-          timestamp: '1 hour ago'
-        }
-      ],
-      isLiked: false
-    },
-    {
-      id: '2',
-      author: 'Mike Johnson',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face',
-      content: 'Community service day was a huge success! We collected over 200 canned goods for the local food bank. Thank you to all the families who participated! 🥫❤️',
-      timestamp: '5 hours ago',
-      likes: 18,
-      comments: [],
-      isLiked: true
-    },
-    {
-      id: '3',
-      author: 'Emma Davis',
-      avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face',
-      content: 'Badge work session this Saturday! We&apos;ll be working on Cooking and First Aid badges. Don&apos;t forget to bring your handbooks! 📚',
-      timestamp: '1 day ago',
-      likes: 8,
-      comments: [
-        {
-          id: '2',
-          author: 'Tom Wilson',
-          content: 'Can&apos;t wait! My son has been looking forward to the cooking badge.',
-          timestamp: '12 hours ago'
-        }
-      ],
-      isLiked: false
-    }
-  ]);
-
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [selectedNewsletter, setSelectedNewsletter] = useState<Newsletter | null>(null);
   const [newComment, setNewComment] = useState('');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadPublishedNewsletters();
+    loadData();
   }, []);
+
+  const loadData = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUser(user);
+      
+      await Promise.all([
+        loadPublishedNewsletters(),
+        loadPosts(),
+        loadComments()
+      ]);
+    } catch (error) {
+      console.error('Error loading data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const loadPublishedNewsletters = async () => {
     try {
@@ -95,7 +71,7 @@ export default function SocialScreen() {
         .select('*')
         .eq('status', 'published')
         .order('published_at', { ascending: false })
-        .limit(3); // Show only the 3 most recent newsletters
+        .limit(3);
 
       if (error) {
         console.error('Error loading newsletters:', error);
@@ -109,12 +85,100 @@ export default function SocialScreen() {
     }
   };
 
+  const loadPosts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('posts')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading posts:', error);
+        return;
+      }
+
+      setPosts(data || []);
+      console.log('Loaded posts:', data?.length || 0);
+    } catch (error) {
+      console.error('Unexpected error loading posts:', error);
+    }
+  };
+
+  const loadComments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('comments')
+        .select('*')
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Error loading comments:', error);
+        return;
+      }
+
+      setComments(data || []);
+      console.log('Loaded comments:', data?.length || 0);
+    } catch (error) {
+      console.error('Unexpected error loading comments:', error);
+    }
+  };
+
+  const handleDeletePost = (post: Post) => {
+    Alert.alert(
+      'Delete Post',
+      'Are you sure you want to delete this post? This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const { error } = await supabase
+                .from('posts')
+                .delete()
+                .eq('id', post.id);
+
+              if (error) {
+                console.error('Error deleting post:', error);
+                Alert.alert('Error', 'Failed to delete post');
+                return;
+              }
+
+              console.log('Post deleted successfully');
+              Alert.alert('Success', 'Post deleted successfully');
+              await loadPosts();
+            } catch (error) {
+              console.error('Unexpected error deleting post:', error);
+              Alert.alert('Error', 'Failed to delete post');
+            }
+          }
+        }
+      ]
+    );
+  };
+
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) {
+      return 'Just now';
+    } else if (diffInHours < 24) {
+      return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
+    } else {
+      const diffInDays = Math.floor(diffInHours / 24);
+      if (diffInDays < 7) {
+        return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
+      } else {
+        return date.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+        });
+      }
+    }
   };
 
   const renderStyledPreview = (text: string, maxLines: number = 3) => {
@@ -230,126 +294,246 @@ export default function SocialScreen() {
     return elements;
   };
 
-  const handleLike = (postId: string) => {
-    setPosts(posts.map(post => {
-      if (post.id === postId) {
-        return {
-          ...post,
-          isLiked: !post.isLiked,
-          likes: post.isLiked ? post.likes - 1 : post.likes + 1
-        };
+  const handleLike = async (postId: string) => {
+    if (!currentUser) {
+      Alert.alert('Error', 'You must be logged in to like posts');
+      return;
+    }
+
+    try {
+      // Check if user already liked this post
+      const { data: existingLike } = await supabase
+        .from('post_likes')
+        .select('id')
+        .eq('post_id', postId)
+        .eq('user_id', currentUser.id)
+        .single();
+
+      if (existingLike) {
+        // Unlike the post
+        const { error } = await supabase
+          .from('post_likes')
+          .delete()
+          .eq('post_id', postId)
+          .eq('user_id', currentUser.id);
+
+        if (error) {
+          console.error('Error unliking post:', error);
+          return;
+        }
+
+        // Update likes count
+        const { error: updateError } = await supabase
+          .from('posts')
+          .update({ likes_count: Math.max(0, posts.find(p => p.id === postId)?.likes_count - 1 || 0) })
+          .eq('id', postId);
+
+        if (updateError) {
+          console.error('Error updating likes count:', updateError);
+        }
+      } else {
+        // Like the post
+        const { error } = await supabase
+          .from('post_likes')
+          .insert([{ post_id: postId, user_id: currentUser.id }]);
+
+        if (error) {
+          console.error('Error liking post:', error);
+          return;
+        }
+
+        // Update likes count
+        const { error: updateError } = await supabase
+          .from('posts')
+          .update({ likes_count: (posts.find(p => p.id === postId)?.likes_count || 0) + 1 })
+          .eq('id', postId);
+
+        if (updateError) {
+          console.error('Error updating likes count:', updateError);
+        }
       }
-      return post;
-    }));
-    console.log('Toggled like for post:', postId);
+
+      await loadPosts();
+      console.log('Toggled like for post:', postId);
+    } catch (error) {
+      console.error('Unexpected error toggling like:', error);
+    }
   };
 
-  const handleCreatePost = (content: string) => {
-    const post: Post = {
-      id: Date.now().toString(),
-      author: 'You',
-      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face',
-      content: content,
-      timestamp: 'Just now',
-      likes: 0,
-      comments: [],
-      isLiked: false
-    };
+  const handleCreatePost = async (content: string) => {
+    if (!currentUser) {
+      Alert.alert('Error', 'You must be logged in to create posts');
+      return;
+    }
 
-    setPosts([post, ...posts]);
-    console.log('Added new post:', post);
-  };
+    try {
+      // Get user profile for name
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('name')
+        .eq('user_id', currentUser.id)
+        .single();
 
-  const handleAddComment = () => {
-    if (!newComment.trim() || !selectedPost) return;
+      const { error } = await supabase
+        .from('posts')
+        .insert([{
+          author_id: currentUser.id,
+          author_name: profile?.name || 'Unknown User',
+          content: content,
+          likes_count: 0,
+          comments_count: 0
+        }]);
 
-    const comment: Comment = {
-      id: Date.now().toString(),
-      author: 'You',
-      content: newComment,
-      timestamp: 'Just now'
-    };
-
-    setPosts(posts.map(post => {
-      if (post.id === selectedPost.id) {
-        return {
-          ...post,
-          comments: [...post.comments, comment]
-        };
+      if (error) {
+        console.error('Error creating post:', error);
+        Alert.alert('Error', 'Failed to create post');
+        return;
       }
-      return post;
-    }));
 
-    setNewComment('');
-    console.log('Added comment to post:', selectedPost.id);
+      console.log('Post created successfully');
+      await loadPosts();
+    } catch (error) {
+      console.error('Unexpected error creating post:', error);
+      Alert.alert('Error', 'Failed to create post');
+    }
   };
 
-  const PostCard = ({ post }: { post: Post }) => (
-    <View style={commonStyles.card}>
-      <View style={[commonStyles.row, { marginBottom: 12 }]}>
-        <View style={commonStyles.centerRow}>
-          <Image
-            source={{ uri: post.avatar }}
-            style={[commonStyles.avatar, { marginRight: 12 }]}
-          />
-          <View>
-            <Text style={[commonStyles.text, { fontWeight: '600', marginBottom: 2 }]}>
-              {post.author}
-            </Text>
-            <Text style={commonStyles.textSecondary}>
-              {post.timestamp}
-            </Text>
+  const handleAddComment = async () => {
+    if (!newComment.trim() || !selectedPost || !currentUser) return;
+
+    try {
+      // Get user profile for name
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('name')
+        .eq('user_id', currentUser.id)
+        .single();
+
+      const { error } = await supabase
+        .from('comments')
+        .insert([{
+          post_id: selectedPost.id,
+          author_id: currentUser.id,
+          author_name: profile?.name || 'Unknown User',
+          content: newComment.trim()
+        }]);
+
+      if (error) {
+        console.error('Error adding comment:', error);
+        Alert.alert('Error', 'Failed to add comment');
+        return;
+      }
+
+      // Update comments count
+      const { error: updateError } = await supabase
+        .from('posts')
+        .update({ comments_count: (selectedPost.comments_count || 0) + 1 })
+        .eq('id', selectedPost.id);
+
+      if (updateError) {
+        console.error('Error updating comments count:', updateError);
+      }
+
+      setNewComment('');
+      await loadComments();
+      await loadPosts();
+      console.log('Added comment to post:', selectedPost.id);
+    } catch (error) {
+      console.error('Unexpected error adding comment:', error);
+      Alert.alert('Error', 'Failed to add comment');
+    }
+  };
+
+  const PostCard = ({ post }: { post: Post }) => {
+    const postComments = comments.filter(c => c.post_id === post.id);
+    const canDelete = currentUser && currentUser.id === post.author_id;
+
+    return (
+      <View style={commonStyles.card}>
+        <View style={[commonStyles.row, { marginBottom: 12 }]}>
+          <View style={commonStyles.centerRow}>
+            <View style={{
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+              backgroundColor: colors.grey,
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginRight: 12,
+            }}>
+              <Icon name="person" size={20} color={colors.textSecondary} />
+            </View>
+            <View>
+              <Text style={[commonStyles.text, { fontWeight: '600', marginBottom: 2 }]}>
+                {post.author_name}
+              </Text>
+              <Text style={commonStyles.textSecondary}>
+                {formatDate(post.created_at)}
+              </Text>
+            </View>
           </View>
+          {canDelete && (
+            <TouchableOpacity
+              onPress={() => handleDeletePost(post)}
+              style={{
+                backgroundColor: colors.error,
+                padding: 6,
+                borderRadius: 4,
+              }}
+            >
+              <Icon name="trash" size={16} color={colors.backgroundAlt} />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        <Text style={[commonStyles.text, { marginBottom: 12 }]}>
+          {post.content}
+        </Text>
+
+        {post.image_url && (
+          <Image
+            source={{ uri: post.image_url }}
+            style={{
+              width: '100%',
+              height: 200,
+              borderRadius: 8,
+              marginBottom: 12,
+            }}
+            resizeMode="cover"
+          />
+        )}
+
+        <View style={commonStyles.row}>
+          <TouchableOpacity
+            style={commonStyles.centerRow}
+            onPress={() => handleLike(post.id)}
+          >
+            <Icon
+              name={post.isLiked ? 'heart' : 'heart-outline'}
+              size={20}
+              color={post.isLiked ? colors.like : colors.textSecondary}
+            />
+            <Text style={[
+              commonStyles.textSecondary,
+              { marginLeft: 6, color: post.isLiked ? colors.like : colors.textSecondary }
+            ]}>
+              {post.likes_count || 0}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[commonStyles.centerRow, { marginLeft: 20 }]}
+            onPress={() => setSelectedPost(post)}
+          >
+            <Icon name="chatbubble-outline" size={20} color={colors.textSecondary} />
+            <Text style={[commonStyles.textSecondary, { marginLeft: 6 }]}>
+              {post.comments_count || 0}
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
-
-      <Text style={[commonStyles.text, { marginBottom: 12 }]}>
-        {post.content}
-      </Text>
-
-      {post.image && (
-        <Image
-          source={{ uri: post.image }}
-          style={{
-            width: '100%',
-            height: 200,
-            borderRadius: 8,
-            marginBottom: 12,
-          }}
-          resizeMode="cover"
-        />
-      )}
-
-      <View style={commonStyles.row}>
-        <TouchableOpacity
-          style={commonStyles.centerRow}
-          onPress={() => handleLike(post.id)}
-        >
-          <Icon
-            name={post.isLiked ? 'heart' : 'heart-outline'}
-            size={20}
-            color={post.isLiked ? colors.like : colors.textSecondary}
-          />
-          <Text style={[
-            commonStyles.textSecondary,
-            { marginLeft: 6, color: post.isLiked ? colors.like : colors.textSecondary }
-          ]}>
-            {post.likes}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[commonStyles.centerRow, { marginLeft: 20 }]}
-          onPress={() => setSelectedPost(post)}
-        >
-          <Icon name="chatbubble-outline" size={20} color={colors.textSecondary} />
-          <Text style={[commonStyles.textSecondary, { marginLeft: 6 }]}>
-            {post.comments.length}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+    );
+  };
 
   const NewsletterCard = ({ newsletter }: { newsletter: Newsletter }) => (
     <TouchableOpacity
@@ -405,6 +589,14 @@ export default function SocialScreen() {
     </TouchableOpacity>
   );
 
+  if (loading) {
+    return (
+      <View style={[commonStyles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={commonStyles.text}>Loading...</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={{ flex: 1 }}>
       <ScrollView style={{ flex: 1 }}>
@@ -455,9 +647,21 @@ export default function SocialScreen() {
             </TouchableOpacity>
           </View>
 
-          {posts.map((post) => (
-            <PostCard key={post.id} post={post} />
-          ))}
+          {posts.length === 0 ? (
+            <View style={[commonStyles.card, { alignItems: 'center', paddingVertical: 40 }]}>
+              <Icon name="chatbubbles" size={48} color={colors.textSecondary} />
+              <Text style={[commonStyles.text, { marginTop: 16, textAlign: 'center' }]}>
+                No posts yet
+              </Text>
+              <Text style={[commonStyles.textSecondary, { textAlign: 'center', marginTop: 4 }]}>
+                Be the first to share something with your troop!
+              </Text>
+            </View>
+          ) : (
+            posts.map((post) => (
+              <PostCard key={post.id} post={post} />
+            ))
+          )}
         </View>
       </ScrollView>
 
@@ -487,21 +691,21 @@ export default function SocialScreen() {
             </Text>
 
             <ScrollView style={{ maxHeight: 300, marginBottom: 20 }}>
-              {selectedPost.comments.length === 0 ? (
+              {comments.filter(c => c.post_id === selectedPost.id).length === 0 ? (
                 <Text style={[commonStyles.textSecondary, { textAlign: 'center', paddingVertical: 20 }]}>
                   No comments yet. Be the first to comment!
                 </Text>
               ) : (
-                selectedPost.comments.map((comment) => (
+                comments.filter(c => c.post_id === selectedPost.id).map((comment) => (
                   <View key={comment.id} style={[commonStyles.card, { marginBottom: 8 }]}>
                     <Text style={[commonStyles.text, { fontWeight: '600', marginBottom: 4 }]}>
-                      {comment.author}
+                      {comment.author_name}
                     </Text>
                     <Text style={commonStyles.text}>
                       {comment.content}
                     </Text>
                     <Text style={[commonStyles.textSecondary, { marginTop: 4 }]}>
-                      {comment.timestamp}
+                      {formatDate(comment.created_at)}
                     </Text>
                   </View>
                 ))

@@ -1,19 +1,20 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert, TextInput } from 'react-native';
 import { commonStyles, colors } from '../styles/commonStyles';
 import { router } from 'expo-router';
 import Icon from './Icon';
 import SimpleBottomSheet from './BottomSheet';
+import { supabase } from '../lib/supabase';
 
 interface User {
   id: string;
+  user_id: string;
   name: string;
   email: string;
   role: string;
   troop: string;
-  joinDate: string;
-  status: 'active' | 'inactive';
+  created_at: string;
 }
 
 interface CalendarEntry {
@@ -23,16 +24,17 @@ interface CalendarEntry {
   time: string;
   location: string;
   type: 'meeting' | 'activity' | 'camping' | 'service';
-  createdBy: string;
+  created_by_name: string;
+  created_at: string;
 }
 
 interface Post {
   id: string;
-  author: string;
+  author_name: string;
   content: string;
-  timestamp: string;
-  likes: number;
-  comments: number;
+  created_at: string;
+  likes_count: number;
+  comments_count: number;
 }
 
 interface AdminDashboardProps {
@@ -42,139 +44,164 @@ interface AdminDashboardProps {
 export default function AdminDashboard({ onClose }: AdminDashboardProps) {
   const [activeTab, setActiveTab] = useState<'users' | 'calendar' | 'posts'>('users');
   const [searchQuery, setSearchQuery] = useState('');
+  const [users, setUsers] = useState<User[]>([]);
+  const [calendarEntries, setCalendarEntries] = useState<CalendarEntry[]>([]);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUser(user);
+      
+      await Promise.all([
+        loadUsers(),
+        loadCalendarEntries(),
+        loadPosts()
+      ]);
+    } catch (error) {
+      console.error('Error loading admin data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadUsers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading users:', error);
+        return;
+      }
+
+      setUsers(data || []);
+      console.log('Loaded users:', data?.length || 0);
+    } catch (error) {
+      console.error('Unexpected error loading users:', error);
+    }
+  };
+
+  const loadCalendarEntries = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('events')
+        .select('*')
+        .order('date', { ascending: false });
+
+      if (error) {
+        console.error('Error loading calendar entries:', error);
+        return;
+      }
+
+      setCalendarEntries(data || []);
+      console.log('Loaded calendar entries:', data?.length || 0);
+    } catch (error) {
+      console.error('Unexpected error loading calendar entries:', error);
+    }
+  };
+
+  const loadPosts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('posts')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading posts:', error);
+        return;
+      }
+
+      setPosts(data || []);
+      console.log('Loaded posts:', data?.length || 0);
+    } catch (error) {
+      console.error('Unexpected error loading posts:', error);
+    }
+  };
 
   const handleNewsletterAccess = () => {
     console.log('Navigating to Newsletter page');
     router.push('/Newsletter');
   };
 
-  // Mock data - in real app, this would come from Supabase
-  const [users, setUsers] = useState<User[]>([
-    {
-      id: '1',
-      name: 'Alex Thompson',
-      email: 'alex@scoutpost.com',
-      role: 'Scoutmaster',
-      troop: 'Troop 123',
-      joinDate: '2023-01-15',
-      status: 'active'
-    },
-    {
-      id: '2',
-      name: 'Sarah Miller',
-      email: 'sarah@scoutpost.com',
-      role: 'Assistant Leader',
-      troop: 'Troop 123',
-      joinDate: '2023-03-20',
-      status: 'active'
-    },
-    {
-      id: '3',
-      name: 'Mike Johnson',
-      email: 'mike@scoutpost.com',
-      role: 'Parent Volunteer',
-      troop: 'Troop 123',
-      joinDate: '2023-06-10',
-      status: 'inactive'
-    }
-  ]);
-
-  const [calendarEntries, setCalendarEntries] = useState<CalendarEntry[]>([
-    {
-      id: '1',
-      title: 'Troop Meeting',
-      date: '2024-01-15',
-      time: '7:00 PM',
-      location: 'Scout Hall',
-      type: 'meeting',
-      createdBy: 'Alex Thompson'
-    },
-    {
-      id: '2',
-      title: 'Winter Camping',
-      date: '2024-01-20',
-      time: '9:00 AM',
-      location: 'Pine Ridge Camp',
-      type: 'camping',
-      createdBy: 'Sarah Miller'
-    },
-    {
-      id: '3',
-      title: 'Community Service',
-      date: '2024-01-25',
-      time: '10:00 AM',
-      location: 'Local Food Bank',
-      type: 'service',
-      createdBy: 'Mike Johnson'
-    }
-  ]);
-
-  const [posts, setPosts] = useState<Post[]>([
-    {
-      id: '1',
-      author: 'Alex Thompson',
-      content: 'Just finished our winter camping trip! The scouts showed incredible resilience...',
-      timestamp: '2 hours ago',
-      likes: 12,
-      comments: 3
-    },
-    {
-      id: '2',
-      author: 'Mike Johnson',
-      content: 'Community service day was a huge success! We collected over 200 canned goods...',
-      timestamp: '5 hours ago',
-      likes: 18,
-      comments: 5
-    },
-    {
-      id: '3',
-      author: 'Sarah Miller',
-      content: 'Badge work session this Saturday! We\'ll be working on Cooking and First Aid badges...',
-      timestamp: '1 day ago',
-      likes: 8,
-      comments: 2
-    }
-  ]);
-
-  const handleDeleteUser = (userId: string) => {
+  const handleDeleteUser = (user: User) => {
     Alert.alert(
       'Delete User',
-      'Are you sure you want to delete this user? This action cannot be undone.',
+      `Are you sure you want to delete ${user.name}? This action cannot be undone and will remove all their data.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => {
-            setUsers(users.filter(u => u.id !== userId));
-            console.log('Deleted user:', userId);
-            Alert.alert('Success', 'User deleted successfully');
+          onPress: async () => {
+            try {
+              // Note: This will cascade delete due to foreign key constraints
+              const { error } = await supabase.auth.admin.deleteUser(user.user_id);
+
+              if (error) {
+                console.error('Error deleting user:', error);
+                Alert.alert('Error', 'Failed to delete user. You may not have admin permissions.');
+                return;
+              }
+
+              console.log('User deleted successfully');
+              Alert.alert('Success', 'User deleted successfully');
+              await loadUsers();
+            } catch (error) {
+              console.error('Unexpected error deleting user:', error);
+              Alert.alert('Error', 'Failed to delete user');
+            }
           }
         }
       ]
     );
   };
 
-  const handleDeleteCalendarEntry = (entryId: string) => {
+  const handleDeleteCalendarEntry = (entry: CalendarEntry) => {
     Alert.alert(
       'Delete Calendar Entry',
-      'Are you sure you want to delete this calendar entry?',
+      `Are you sure you want to delete "${entry.title}"?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => {
-            setCalendarEntries(calendarEntries.filter(e => e.id !== entryId));
-            console.log('Deleted calendar entry:', entryId);
-            Alert.alert('Success', 'Calendar entry deleted successfully');
+          onPress: async () => {
+            try {
+              const { error } = await supabase
+                .from('events')
+                .delete()
+                .eq('id', entry.id);
+
+              if (error) {
+                console.error('Error deleting calendar entry:', error);
+                Alert.alert('Error', 'Failed to delete calendar entry');
+                return;
+              }
+
+              console.log('Calendar entry deleted successfully');
+              Alert.alert('Success', 'Calendar entry deleted successfully');
+              await loadCalendarEntries();
+            } catch (error) {
+              console.error('Unexpected error deleting calendar entry:', error);
+              Alert.alert('Error', 'Failed to delete calendar entry');
+            }
           }
         }
       ]
     );
   };
 
-  const handleDeletePost = (postId: string) => {
+  const handleDeletePost = (post: Post) => {
     Alert.alert(
       'Delete Post',
       'Are you sure you want to delete this post?',
@@ -183,10 +210,26 @@ export default function AdminDashboard({ onClose }: AdminDashboardProps) {
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => {
-            setPosts(posts.filter(p => p.id !== postId));
-            console.log('Deleted post:', postId);
-            Alert.alert('Success', 'Post deleted successfully');
+          onPress: async () => {
+            try {
+              const { error } = await supabase
+                .from('posts')
+                .delete()
+                .eq('id', post.id);
+
+              if (error) {
+                console.error('Error deleting post:', error);
+                Alert.alert('Error', 'Failed to delete post');
+                return;
+              }
+
+              console.log('Post deleted successfully');
+              Alert.alert('Success', 'Post deleted successfully');
+              await loadPosts();
+            } catch (error) {
+              console.error('Unexpected error deleting post:', error);
+              Alert.alert('Error', 'Failed to delete post');
+            }
           }
         }
       ]
@@ -213,9 +256,17 @@ export default function AdminDashboard({ onClose }: AdminDashboardProps) {
     }
   };
 
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
   const filteredUsers = users.filter(user =>
-    user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchQuery.toLowerCase())
+    user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.email?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const filteredCalendarEntries = calendarEntries.filter(entry =>
@@ -224,7 +275,7 @@ export default function AdminDashboard({ onClose }: AdminDashboardProps) {
   );
 
   const filteredPosts = posts.filter(post =>
-    post.author.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    post.author_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     post.content.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -263,174 +314,191 @@ export default function AdminDashboard({ onClose }: AdminDashboardProps) {
 
   const renderUsers = () => (
     <View>
-      {filteredUsers.map((user) => (
-        <View key={user.id} style={commonStyles.card}>
-          <View style={commonStyles.row}>
-            <View style={{ flex: 1 }}>
-              <View style={[commonStyles.centerRow, { justifyContent: 'flex-start', marginBottom: 8 }]}>
-                <View style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 20,
-                  backgroundColor: colors.grey,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginRight: 12,
-                }}>
-                  <Icon name="person" size={20} color={colors.textSecondary} />
-                </View>
-                <View>
-                  <Text style={[commonStyles.text, { fontWeight: '600', marginBottom: 2 }]}>
-                    {user.name}
-                  </Text>
-                  <Text style={commonStyles.textSecondary}>
-                    {user.email}
-                  </Text>
-                </View>
-              </View>
-              <View style={[commonStyles.row, { marginBottom: 8 }]}>
-                <Text style={commonStyles.textSecondary}>
-                  {user.role} • {user.troop}
-                </Text>
-                <View style={{
-                  backgroundColor: user.status === 'active' ? colors.success : colors.warning,
-                  paddingHorizontal: 8,
-                  paddingVertical: 2,
-                  borderRadius: 4,
-                }}>
-                  <Text style={{ color: colors.backgroundAlt, fontSize: 12, fontWeight: '600' }}>
-                    {user.status.toUpperCase()}
-                  </Text>
-                </View>
-              </View>
-              <Text style={commonStyles.textSecondary}>
-                Joined: {new Date(user.joinDate).toLocaleDateString()}
-              </Text>
-            </View>
-            <TouchableOpacity
-              onPress={() => handleDeleteUser(user.id)}
-              style={{
-                backgroundColor: colors.error,
-                padding: 8,
-                borderRadius: 6,
-                marginLeft: 12,
-              }}
-            >
-              <Icon name="trash" size={16} color={colors.backgroundAlt} />
-            </TouchableOpacity>
-          </View>
+      {filteredUsers.length === 0 ? (
+        <View style={[commonStyles.card, { alignItems: 'center', paddingVertical: 40 }]}>
+          <Icon name="people" size={48} color={colors.textSecondary} />
+          <Text style={[commonStyles.text, { marginTop: 16, textAlign: 'center' }]}>
+            No users found
+          </Text>
         </View>
-      ))}
+      ) : (
+        filteredUsers.map((user) => (
+          <View key={user.id} style={commonStyles.card}>
+            <View style={commonStyles.row}>
+              <View style={{ flex: 1 }}>
+                <View style={[commonStyles.centerRow, { justifyContent: 'flex-start', marginBottom: 8 }]}>
+                  <View style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 20,
+                    backgroundColor: colors.grey,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginRight: 12,
+                  }}>
+                    <Icon name="person" size={20} color={colors.textSecondary} />
+                  </View>
+                  <View>
+                    <Text style={[commonStyles.text, { fontWeight: '600', marginBottom: 2 }]}>
+                      {user.name || 'Unknown User'}
+                    </Text>
+                    <Text style={commonStyles.textSecondary}>
+                      {user.email || 'No email'}
+                    </Text>
+                  </View>
+                </View>
+                <View style={[commonStyles.row, { marginBottom: 8 }]}>
+                  <Text style={commonStyles.textSecondary}>
+                    {user.role || 'No role'} • {user.troop || 'No troop'}
+                  </Text>
+                </View>
+                <Text style={commonStyles.textSecondary}>
+                  Joined: {formatDate(user.created_at)}
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => handleDeleteUser(user)}
+                style={{
+                  backgroundColor: colors.error,
+                  padding: 8,
+                  borderRadius: 6,
+                  marginLeft: 12,
+                }}
+              >
+                <Icon name="trash" size={16} color={colors.backgroundAlt} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        ))
+      )}
     </View>
   );
 
   const renderCalendarEntries = () => (
     <View>
-      {filteredCalendarEntries.map((entry) => (
-        <View key={entry.id} style={commonStyles.card}>
-          <View style={commonStyles.row}>
-            <View style={{ flex: 1 }}>
-              <View style={[commonStyles.centerRow, { justifyContent: 'flex-start', marginBottom: 8 }]}>
-                <View style={{
-                  backgroundColor: getEventTypeColor(entry.type),
-                  padding: 8,
-                  borderRadius: 8,
-                  marginRight: 12,
-                }}>
-                  <Icon name={getEventTypeIcon(entry.type) as any} size={20} color={colors.backgroundAlt} />
-                </View>
-                <View>
-                  <Text style={[commonStyles.text, { fontWeight: '600', marginBottom: 2 }]}>
-                    {entry.title}
-                  </Text>
-                  <Text style={commonStyles.textSecondary}>
-                    {new Date(entry.date).toLocaleDateString()} • {entry.time}
-                  </Text>
-                </View>
-              </View>
-              <Text style={[commonStyles.textSecondary, { marginBottom: 4 }]}>
-                Location: {entry.location}
-              </Text>
-              <Text style={commonStyles.textSecondary}>
-                Created by: {entry.createdBy}
-              </Text>
-            </View>
-            <TouchableOpacity
-              onPress={() => handleDeleteCalendarEntry(entry.id)}
-              style={{
-                backgroundColor: colors.error,
-                padding: 8,
-                borderRadius: 6,
-                marginLeft: 12,
-              }}
-            >
-              <Icon name="trash" size={16} color={colors.backgroundAlt} />
-            </TouchableOpacity>
-          </View>
+      {filteredCalendarEntries.length === 0 ? (
+        <View style={[commonStyles.card, { alignItems: 'center', paddingVertical: 40 }]}>
+          <Icon name="calendar" size={48} color={colors.textSecondary} />
+          <Text style={[commonStyles.text, { marginTop: 16, textAlign: 'center' }]}>
+            No calendar entries found
+          </Text>
         </View>
-      ))}
+      ) : (
+        filteredCalendarEntries.map((entry) => (
+          <View key={entry.id} style={commonStyles.card}>
+            <View style={commonStyles.row}>
+              <View style={{ flex: 1 }}>
+                <View style={[commonStyles.centerRow, { justifyContent: 'flex-start', marginBottom: 8 }]}>
+                  <View style={{
+                    backgroundColor: getEventTypeColor(entry.type),
+                    padding: 8,
+                    borderRadius: 8,
+                    marginRight: 12,
+                  }}>
+                    <Icon name={getEventTypeIcon(entry.type) as any} size={20} color={colors.backgroundAlt} />
+                  </View>
+                  <View>
+                    <Text style={[commonStyles.text, { fontWeight: '600', marginBottom: 2 }]}>
+                      {entry.title}
+                    </Text>
+                    <Text style={commonStyles.textSecondary}>
+                      {formatDate(entry.date)} • {entry.time}
+                    </Text>
+                  </View>
+                </View>
+                <Text style={[commonStyles.textSecondary, { marginBottom: 4 }]}>
+                  Location: {entry.location}
+                </Text>
+                <Text style={commonStyles.textSecondary}>
+                  Created by: {entry.created_by_name}
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => handleDeleteCalendarEntry(entry)}
+                style={{
+                  backgroundColor: colors.error,
+                  padding: 8,
+                  borderRadius: 6,
+                  marginLeft: 12,
+                }}
+              >
+                <Icon name="trash" size={16} color={colors.backgroundAlt} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        ))
+      )}
     </View>
   );
 
   const renderPosts = () => (
     <View>
-      {filteredPosts.map((post) => (
-        <View key={post.id} style={commonStyles.card}>
-          <View style={commonStyles.row}>
-            <View style={{ flex: 1 }}>
-              <View style={[commonStyles.centerRow, { justifyContent: 'flex-start', marginBottom: 8 }]}>
-                <View style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 20,
-                  backgroundColor: colors.grey,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginRight: 12,
-                }}>
-                  <Icon name="person" size={20} color={colors.textSecondary} />
-                </View>
-                <View>
-                  <Text style={[commonStyles.text, { fontWeight: '600', marginBottom: 2 }]}>
-                    {post.author}
-                  </Text>
-                  <Text style={commonStyles.textSecondary}>
-                    {post.timestamp}
-                  </Text>
-                </View>
-              </View>
-              <Text style={[commonStyles.text, { marginBottom: 8 }]} numberOfLines={2}>
-                {post.content}
-              </Text>
-              <View style={commonStyles.row}>
-                <View style={commonStyles.centerRow}>
-                  <Icon name="heart" size={16} color={colors.like} />
-                  <Text style={[commonStyles.textSecondary, { marginLeft: 4 }]}>
-                    {post.likes}
-                  </Text>
-                </View>
-                <View style={[commonStyles.centerRow, { marginLeft: 16 }]}>
-                  <Icon name="chatbubble" size={16} color={colors.info} />
-                  <Text style={[commonStyles.textSecondary, { marginLeft: 4 }]}>
-                    {post.comments}
-                  </Text>
-                </View>
-              </View>
-            </View>
-            <TouchableOpacity
-              onPress={() => handleDeletePost(post.id)}
-              style={{
-                backgroundColor: colors.error,
-                padding: 8,
-                borderRadius: 6,
-                marginLeft: 12,
-              }}
-            >
-              <Icon name="trash" size={16} color={colors.backgroundAlt} />
-            </TouchableOpacity>
-          </View>
+      {filteredPosts.length === 0 ? (
+        <View style={[commonStyles.card, { alignItems: 'center', paddingVertical: 40 }]}>
+          <Icon name="chatbubbles" size={48} color={colors.textSecondary} />
+          <Text style={[commonStyles.text, { marginTop: 16, textAlign: 'center' }]}>
+            No posts found
+          </Text>
         </View>
-      ))}
+      ) : (
+        filteredPosts.map((post) => (
+          <View key={post.id} style={commonStyles.card}>
+            <View style={commonStyles.row}>
+              <View style={{ flex: 1 }}>
+                <View style={[commonStyles.centerRow, { justifyContent: 'flex-start', marginBottom: 8 }]}>
+                  <View style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 20,
+                    backgroundColor: colors.grey,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginRight: 12,
+                  }}>
+                    <Icon name="person" size={20} color={colors.textSecondary} />
+                  </View>
+                  <View>
+                    <Text style={[commonStyles.text, { fontWeight: '600', marginBottom: 2 }]}>
+                      {post.author_name}
+                    </Text>
+                    <Text style={commonStyles.textSecondary}>
+                      {formatDate(post.created_at)}
+                    </Text>
+                  </View>
+                </View>
+                <Text style={[commonStyles.text, { marginBottom: 8 }]} numberOfLines={2}>
+                  {post.content}
+                </Text>
+                <View style={commonStyles.row}>
+                  <View style={commonStyles.centerRow}>
+                    <Icon name="heart" size={16} color={colors.like} />
+                    <Text style={[commonStyles.textSecondary, { marginLeft: 4 }]}>
+                      {post.likes_count || 0}
+                    </Text>
+                  </View>
+                  <View style={[commonStyles.centerRow, { marginLeft: 16 }]}>
+                    <Icon name="chatbubble" size={16} color={colors.info} />
+                    <Text style={[commonStyles.textSecondary, { marginLeft: 4 }]}>
+                      {post.comments_count || 0}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+              <TouchableOpacity
+                onPress={() => handleDeletePost(post)}
+                style={{
+                  backgroundColor: colors.error,
+                  padding: 8,
+                  borderRadius: 6,
+                  marginLeft: 12,
+                }}
+              >
+                <Icon name="trash" size={16} color={colors.backgroundAlt} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        ))
+      )}
     </View>
   );
 
@@ -446,6 +514,14 @@ export default function AdminDashboard({ onClose }: AdminDashboardProps) {
         return renderUsers();
     }
   };
+
+  if (loading) {
+    return (
+      <View style={[commonStyles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={commonStyles.text}>Loading...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -536,28 +612,6 @@ export default function AdminDashboard({ onClose }: AdminDashboardProps) {
           {renderContent()}
         </View>
       </ScrollView>
-
-      {/* Supabase Notice */}
-      <View style={{
-        backgroundColor: colors.info,
-        paddingHorizontal: 20,
-        paddingVertical: 12,
-        margin: 20,
-        borderRadius: 8,
-      }}>
-        <View style={[commonStyles.centerRow, { justifyContent: 'flex-start' }]}>
-          <Icon name="information-circle" size={20} color={colors.backgroundAlt} />
-          <Text style={{
-            color: colors.backgroundAlt,
-            fontSize: 14,
-            fontWeight: '600',
-            marginLeft: 8,
-            flex: 1,
-          }}>
-            To enable real backend functionality, connect to Supabase using the Supabase button.
-          </Text>
-        </View>
-      </View>
     </View>
   );
 }

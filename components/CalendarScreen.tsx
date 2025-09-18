@@ -1,11 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import { commonStyles, colors } from '../styles/commonStyles';
 import Icon from './Icon';
 import SimpleBottomSheet from './BottomSheet';
 import AddEventForm from './AddEventForm';
+import { supabase } from '../lib/supabase';
 
 interface ScoutEvent {
   id: string;
@@ -15,40 +16,53 @@ interface ScoutEvent {
   location: string;
   description: string;
   type: 'meeting' | 'activity' | 'camping' | 'service';
+  created_by_id: string;
+  created_by_name: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export default function CalendarScreen() {
   const [selectedDate, setSelectedDate] = useState('');
   const [showAddEvent, setShowAddEvent] = useState(false);
-  const [events, setEvents] = useState<ScoutEvent[]>([
-    {
-      id: '1',
-      title: 'Troop Meeting',
-      date: '2024-01-15',
-      time: '7:00 PM',
-      location: 'Scout Hall',
-      description: 'Weekly troop meeting with badge work',
-      type: 'meeting'
-    },
-    {
-      id: '2',
-      title: 'Winter Camping',
-      date: '2024-01-20',
-      time: '9:00 AM',
-      location: 'Pine Ridge Camp',
-      description: 'Weekend winter camping adventure',
-      type: 'camping'
-    },
-    {
-      id: '3',
-      title: 'Community Service',
-      date: '2024-01-25',
-      time: '10:00 AM',
-      location: 'Local Food Bank',
-      description: 'Volunteer at the community food bank',
-      type: 'service'
+  const [events, setEvents] = useState<ScoutEvent[]>([]);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUser(user);
+      await loadEvents();
+    } catch (error) {
+      console.error('Error loading data:', error);
+    } finally {
+      setLoading(false);
     }
-  ]);
+  };
+
+  const loadEvents = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('events')
+        .select('*')
+        .order('date', { ascending: true });
+
+      if (error) {
+        console.error('Error loading events:', error);
+        return;
+      }
+
+      setEvents(data || []);
+      console.log('Loaded events:', data?.length || 0);
+    } catch (error) {
+      console.error('Unexpected error loading events:', error);
+    }
+  };
 
   const getEventTypeColor = (type: string) => {
     switch (type) {
@@ -88,33 +102,85 @@ export default function CalendarScreen() {
 
   const selectedDateEvents = events.filter(event => event.date === selectedDate);
 
-  const handleAddEvent = (newEvent: Omit<ScoutEvent, 'id'>) => {
-    const event: ScoutEvent = {
-      ...newEvent,
-      id: Date.now().toString(),
-    };
-    setEvents([...events, event]);
-    setShowAddEvent(false);
-    console.log('Added new event:', event);
+  const handleAddEvent = async (newEvent: Omit<ScoutEvent, 'id' | 'created_by_id' | 'created_by_name' | 'created_at' | 'updated_at'>) => {
+    if (!currentUser) {
+      Alert.alert('Error', 'You must be logged in to create events');
+      return;
+    }
+
+    try {
+      // Get user profile for name
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('name')
+        .eq('user_id', currentUser.id)
+        .single();
+
+      const { error } = await supabase
+        .from('events')
+        .insert([{
+          ...newEvent,
+          created_by_id: currentUser.id,
+          created_by_name: profile?.name || 'Unknown User'
+        }]);
+
+      if (error) {
+        console.error('Error creating event:', error);
+        Alert.alert('Error', 'Failed to create event');
+        return;
+      }
+
+      console.log('Event created successfully');
+      setShowAddEvent(false);
+      await loadEvents();
+    } catch (error) {
+      console.error('Unexpected error creating event:', error);
+      Alert.alert('Error', 'Failed to create event');
+    }
   };
 
-  const handleDeleteEvent = (eventId: string) => {
+  const handleDeleteEvent = (event: ScoutEvent) => {
     Alert.alert(
       'Delete Event',
-      'Are you sure you want to delete this event?',
+      `Are you sure you want to delete "${event.title}"? This action cannot be undone.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => {
-            setEvents(events.filter(e => e.id !== eventId));
-            console.log('Deleted event:', eventId);
+          onPress: async () => {
+            try {
+              const { error } = await supabase
+                .from('events')
+                .delete()
+                .eq('id', event.id);
+
+              if (error) {
+                console.error('Error deleting event:', error);
+                Alert.alert('Error', 'Failed to delete event');
+                return;
+              }
+
+              console.log('Event deleted successfully');
+              Alert.alert('Success', 'Event deleted successfully');
+              await loadEvents();
+            } catch (error) {
+              console.error('Unexpected error deleting event:', error);
+              Alert.alert('Error', 'Failed to delete event');
+            }
           }
         }
       ]
     );
   };
+
+  if (loading) {
+    return (
+      <View style={[commonStyles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={commonStyles.text}>Loading...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={{ flex: 1 }}>
@@ -176,39 +242,52 @@ export default function CalendarScreen() {
                 </Text>
               </View>
             ) : (
-              selectedDateEvents.map((event) => (
-                <View key={event.id} style={commonStyles.card}>
-                  <View style={commonStyles.row}>
-                    <View style={{ flex: 1 }}>
-                      <View style={[commonStyles.centerRow, { justifyContent: 'flex-start', marginBottom: 8 }]}>
-                        <View style={{
-                          backgroundColor: getEventTypeColor(event.type),
-                          padding: 6,
-                          borderRadius: 6,
-                          marginRight: 12,
-                        }}>
-                          <Icon name={getEventTypeIcon(event.type) as any} size={16} color={colors.backgroundAlt} />
+              selectedDateEvents.map((event) => {
+                const canDelete = currentUser && currentUser.id === event.created_by_id;
+                
+                return (
+                  <View key={event.id} style={commonStyles.card}>
+                    <View style={commonStyles.row}>
+                      <View style={{ flex: 1 }}>
+                        <View style={[commonStyles.centerRow, { justifyContent: 'flex-start', marginBottom: 8 }]}>
+                          <View style={{
+                            backgroundColor: getEventTypeColor(event.type),
+                            padding: 6,
+                            borderRadius: 6,
+                            marginRight: 12,
+                          }}>
+                            <Icon name={getEventTypeIcon(event.type) as any} size={16} color={colors.backgroundAlt} />
+                          </View>
+                          <Text style={[commonStyles.subtitle, { marginBottom: 0 }]}>
+                            {event.title}
+                          </Text>
                         </View>
-                        <Text style={[commonStyles.subtitle, { marginBottom: 0 }]}>
-                          {event.title}
+                        <Text style={[commonStyles.textSecondary, { marginBottom: 4 }]}>
+                          {event.time} • {event.location}
+                        </Text>
+                        <Text style={[commonStyles.text, { marginBottom: 4 }]}>
+                          {event.description}
+                        </Text>
+                        <Text style={commonStyles.textSecondary}>
+                          Created by: {event.created_by_name}
                         </Text>
                       </View>
-                      <Text style={[commonStyles.textSecondary, { marginBottom: 4 }]}>
-                        {event.time} • {event.location}
-                      </Text>
-                      <Text style={commonStyles.text}>
-                        {event.description}
-                      </Text>
+                      {canDelete && (
+                        <TouchableOpacity
+                          onPress={() => handleDeleteEvent(event)}
+                          style={{
+                            backgroundColor: colors.error,
+                            padding: 8,
+                            borderRadius: 6,
+                          }}
+                        >
+                          <Icon name="trash" size={16} color={colors.backgroundAlt} />
+                        </TouchableOpacity>
+                      )}
                     </View>
-                    <TouchableOpacity
-                      onPress={() => handleDeleteEvent(event.id)}
-                      style={{ padding: 8 }}
-                    >
-                      <Icon name="trash" size={20} color={colors.error} />
-                    </TouchableOpacity>
                   </View>
-                </View>
-              ))
+                );
+              })
             )}
           </View>
         )}
@@ -216,33 +295,61 @@ export default function CalendarScreen() {
         {!selectedDate && (
           <View style={commonStyles.section}>
             <Text style={commonStyles.subtitle}>Upcoming Events</Text>
-            {events.slice(0, 3).map((event) => (
-              <View key={event.id} style={commonStyles.card}>
-                <View style={commonStyles.row}>
-                  <View style={{ flex: 1 }}>
-                    <View style={[commonStyles.centerRow, { justifyContent: 'flex-start', marginBottom: 8 }]}>
-                      <View style={{
-                        backgroundColor: getEventTypeColor(event.type),
-                        padding: 6,
-                        borderRadius: 6,
-                        marginRight: 12,
-                      }}>
-                        <Icon name={getEventTypeIcon(event.type) as any} size={16} color={colors.backgroundAlt} />
-                      </View>
-                      <Text style={[commonStyles.subtitle, { marginBottom: 0 }]}>
-                        {event.title}
-                      </Text>
-                    </View>
-                    <Text style={[commonStyles.textSecondary, { marginBottom: 4 }]}>
-                      {new Date(event.date).toLocaleDateString()} • {event.time}
-                    </Text>
-                    <Text style={commonStyles.text}>
-                      {event.location}
-                    </Text>
-                  </View>
-                </View>
+            {events.length === 0 ? (
+              <View style={[commonStyles.card, { alignItems: 'center', paddingVertical: 40 }]}>
+                <Icon name="calendar" size={48} color={colors.textSecondary} />
+                <Text style={[commonStyles.text, { marginTop: 16, textAlign: 'center' }]}>
+                  No events scheduled
+                </Text>
+                <Text style={[commonStyles.textSecondary, { textAlign: 'center', marginTop: 4 }]}>
+                  Select a date above to add your first event
+                </Text>
               </View>
-            ))}
+            ) : (
+              events.slice(0, 3).map((event) => {
+                const canDelete = currentUser && currentUser.id === event.created_by_id;
+                
+                return (
+                  <View key={event.id} style={commonStyles.card}>
+                    <View style={commonStyles.row}>
+                      <View style={{ flex: 1 }}>
+                        <View style={[commonStyles.centerRow, { justifyContent: 'flex-start', marginBottom: 8 }]}>
+                          <View style={{
+                            backgroundColor: getEventTypeColor(event.type),
+                            padding: 6,
+                            borderRadius: 6,
+                            marginRight: 12,
+                          }}>
+                            <Icon name={getEventTypeIcon(event.type) as any} size={16} color={colors.backgroundAlt} />
+                          </View>
+                          <Text style={[commonStyles.subtitle, { marginBottom: 0 }]}>
+                            {event.title}
+                          </Text>
+                        </View>
+                        <Text style={[commonStyles.textSecondary, { marginBottom: 4 }]}>
+                          {new Date(event.date).toLocaleDateString()} • {event.time}
+                        </Text>
+                        <Text style={commonStyles.text}>
+                          {event.location}
+                        </Text>
+                      </View>
+                      {canDelete && (
+                        <TouchableOpacity
+                          onPress={() => handleDeleteEvent(event)}
+                          style={{
+                            backgroundColor: colors.error,
+                            padding: 6,
+                            borderRadius: 4,
+                          }}
+                        >
+                          <Icon name="trash" size={14} color={colors.backgroundAlt} />
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  </View>
+                );
+              })
+            )}
           </View>
         )}
       </ScrollView>
