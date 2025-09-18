@@ -405,6 +405,19 @@ export default function ProfileScreen() {
           />
         )}
 
+        {/* Newsletter - Only show for admin users */}
+        {isAdmin && (
+          <MenuButton
+            icon="mail"
+            label="Newsletter"
+            onPress={() => {
+              console.log('Navigating to Newsletter page');
+              router.push('/Newsletter');
+            }}
+            color={colors.primary}
+          />
+        )}
+
         <MenuButton
           icon="settings"
           label="Settings"

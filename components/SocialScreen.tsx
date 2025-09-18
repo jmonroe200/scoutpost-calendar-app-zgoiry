@@ -1,10 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, Image } from 'react-native';
 import { commonStyles, colors } from '../styles/commonStyles';
 import Icon from './Icon';
 import SimpleBottomSheet from './BottomSheet';
 import CreatePostScreen from './CreatePostScreen';
+import { supabase } from '../lib/supabase';
+import { Newsletter } from '../lib/types';
 
 interface Post {
   id: string;
@@ -26,6 +28,8 @@ interface Comment {
 }
 
 export default function SocialScreen() {
+  const [newsletters, setNewsletters] = useState<Newsletter[]>([]);
+  const [showNewsletters, setShowNewsletters] = useState(true);
   const [posts, setPosts] = useState<Post[]>([
     {
       id: '1',
@@ -77,6 +81,39 @@ export default function SocialScreen() {
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [newComment, setNewComment] = useState('');
+
+  useEffect(() => {
+    loadPublishedNewsletters();
+  }, []);
+
+  const loadPublishedNewsletters = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('newsletters')
+        .select('*')
+        .eq('status', 'published')
+        .order('published_at', { ascending: false })
+        .limit(3); // Show only the 3 most recent newsletters
+
+      if (error) {
+        console.error('Error loading newsletters:', error);
+        return;
+      }
+
+      setNewsletters(data || []);
+      console.log('Loaded published newsletters:', data?.length || 0);
+    } catch (error) {
+      console.error('Unexpected error loading newsletters:', error);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
 
   const handleLike = (postId: string) => {
     setPosts(posts.map(post => {
@@ -199,10 +236,77 @@ export default function SocialScreen() {
     </View>
   );
 
+  const NewsletterCard = ({ newsletter }: { newsletter: Newsletter }) => (
+    <View style={[commonStyles.card, { backgroundColor: colors.backgroundAlt, borderLeftWidth: 4, borderLeftColor: colors.primary }]}>
+      <View style={[commonStyles.row, { marginBottom: 8 }]}>
+        <Icon name="mail" size={20} color={colors.primary} />
+        <Text style={[commonStyles.text, { fontWeight: '600', marginLeft: 8, flex: 1 }]}>
+          {newsletter.title}
+        </Text>
+        <View style={{
+          backgroundColor: colors.success,
+          paddingHorizontal: 6,
+          paddingVertical: 2,
+          borderRadius: 4,
+        }}>
+          <Text style={{
+            color: colors.backgroundAlt,
+            fontSize: 10,
+            fontWeight: '600',
+          }}>
+            NEWSLETTER
+          </Text>
+        </View>
+      </View>
+      
+      <Text style={[commonStyles.text, { marginBottom: 12, lineHeight: 20 }]} numberOfLines={3}>
+        {newsletter.content}
+      </Text>
+      
+      <View style={commonStyles.row}>
+        <Text style={commonStyles.textSecondary}>
+          By {newsletter.author_name}
+        </Text>
+        <Text style={commonStyles.textSecondary}>
+          {newsletter.published_at ? formatDate(newsletter.published_at) : formatDate(newsletter.created_at)}
+        </Text>
+      </View>
+    </View>
+  );
+
   return (
     <View style={{ flex: 1 }}>
       <ScrollView style={{ flex: 1 }}>
         <View style={commonStyles.section}>
+          {/* Newsletter Section */}
+          {newsletters.length > 0 && (
+            <>
+              <View style={commonStyles.row}>
+                <Text style={commonStyles.subtitle}>Latest Newsletters</Text>
+                <TouchableOpacity
+                  onPress={() => setShowNewsletters(!showNewsletters)}
+                  style={{
+                    backgroundColor: colors.info,
+                    paddingHorizontal: 8,
+                    paddingVertical: 4,
+                    borderRadius: 4,
+                  }}
+                >
+                  <Icon 
+                    name={showNewsletters ? 'chevron-up' : 'chevron-down'} 
+                    size={16} 
+                    color={colors.backgroundAlt} 
+                  />
+                </TouchableOpacity>
+              </View>
+
+              {showNewsletters && newsletters.map((newsletter) => (
+                <NewsletterCard key={newsletter.id} newsletter={newsletter} />
+              ))}
+            </>
+          )}
+
+          {/* Community Feed Section */}
           <View style={commonStyles.row}>
             <Text style={commonStyles.subtitle}>Community Feed</Text>
             <TouchableOpacity

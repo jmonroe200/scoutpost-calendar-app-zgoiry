@@ -21,3 +21,15 @@ export interface AuthUser {
     role?: string;
   };
 }
+
+export interface Newsletter {
+  id: string;
+  title: string;
+  content: string;
+  author_id: string;
+  author_name: string;
+  status: 'draft' | 'published';
+  published_at: string | null;
+  created_at: string;
+  updated_at: string;
+}

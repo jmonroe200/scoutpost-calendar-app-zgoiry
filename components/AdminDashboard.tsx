@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert, TextInput } from 'react-native';
 import { commonStyles, colors } from '../styles/commonStyles';
+import { router } from 'expo-router';
 import Icon from './Icon';
 import SimpleBottomSheet from './BottomSheet';
 
@@ -41,6 +42,11 @@ interface AdminDashboardProps {
 export default function AdminDashboard({ onClose }: AdminDashboardProps) {
   const [activeTab, setActiveTab] = useState<'users' | 'calendar' | 'posts'>('users');
   const [searchQuery, setSearchQuery] = useState('');
+
+  const handleNewsletterAccess = () => {
+    console.log('Navigating to Newsletter page');
+    router.push('/Newsletter');
+  };
 
   // Mock data - in real app, this would come from Supabase
   const [users, setUsers] = useState<User[]>([
@@ -490,6 +496,38 @@ export default function AdminDashboard({ onClose }: AdminDashboardProps) {
         <TabButton tab="users" label="Users" count={filteredUsers.length} />
         <TabButton tab="calendar" label="Calendar" count={filteredCalendarEntries.length} />
         <TabButton tab="posts" label="Posts" count={filteredPosts.length} />
+      </View>
+
+      {/* Quick Actions */}
+      <View style={{ paddingHorizontal: 20, marginBottom: 16 }}>
+        <TouchableOpacity
+          style={[commonStyles.card, {
+            backgroundColor: colors.primary,
+            alignItems: 'center',
+            paddingVertical: 16,
+          }]}
+          onPress={handleNewsletterAccess}
+        >
+          <View style={commonStyles.centerRow}>
+            <Icon name="mail" size={24} color={colors.backgroundAlt} />
+            <Text style={{
+              color: colors.backgroundAlt,
+              fontSize: 16,
+              fontWeight: '600',
+              marginLeft: 12,
+            }}>
+              Manage Newsletter
+            </Text>
+          </View>
+          <Text style={{
+            color: colors.backgroundAlt,
+            fontSize: 14,
+            marginTop: 4,
+            opacity: 0.9,
+          }}>
+            Create and publish weekly newsletters
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {/* Content */}
