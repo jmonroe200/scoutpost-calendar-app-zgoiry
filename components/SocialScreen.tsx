@@ -5,6 +5,7 @@ import { commonStyles, colors } from '../styles/commonStyles';
 import Icon from './Icon';
 import SimpleBottomSheet from './BottomSheet';
 import CreatePostScreen from './CreatePostScreen';
+import NewsletterDetailScreen from './NewsletterDetailScreen';
 import { supabase } from '../lib/supabase';
 import { Newsletter } from '../lib/types';
 
@@ -80,6 +81,7 @@ export default function SocialScreen() {
 
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [selectedNewsletter, setSelectedNewsletter] = useState<Newsletter | null>(null);
   const [newComment, setNewComment] = useState('');
 
   useEffect(() => {
@@ -237,7 +239,11 @@ export default function SocialScreen() {
   );
 
   const NewsletterCard = ({ newsletter }: { newsletter: Newsletter }) => (
-    <View style={[commonStyles.card, { backgroundColor: colors.backgroundAlt, borderLeftWidth: 4, borderLeftColor: colors.primary }]}>
+    <TouchableOpacity
+      style={[commonStyles.card, { backgroundColor: colors.backgroundAlt, borderLeftWidth: 4, borderLeftColor: colors.primary }]}
+      onPress={() => setSelectedNewsletter(newsletter)}
+      activeOpacity={0.7}
+    >
       <View style={[commonStyles.row, { marginBottom: 8 }]}>
         <Icon name="mail" size={20} color={colors.primary} />
         <Text style={[commonStyles.text, { fontWeight: '600', marginLeft: 8, flex: 1 }]}>
@@ -271,7 +277,14 @@ export default function SocialScreen() {
           {newsletter.published_at ? formatDate(newsletter.published_at) : formatDate(newsletter.created_at)}
         </Text>
       </View>
-    </View>
+      
+      <View style={[commonStyles.row, { marginTop: 8, justifyContent: 'center' }]}>
+        <Text style={[commonStyles.textSecondary, { fontSize: 12 }]}>
+          Tap to read full newsletter
+        </Text>
+        <Icon name="chevron-forward" size={14} color={colors.textSecondary} style={{ marginLeft: 4 }} />
+      </View>
+    </TouchableOpacity>
   );
 
   return (
@@ -335,6 +348,13 @@ export default function SocialScreen() {
         isVisible={showCreatePost}
         onClose={() => setShowCreatePost(false)}
         onCreatePost={handleCreatePost}
+      />
+
+      {/* Newsletter Detail Modal */}
+      <NewsletterDetailScreen
+        newsletter={selectedNewsletter}
+        isVisible={!!selectedNewsletter}
+        onClose={() => setSelectedNewsletter(null)}
       />
 
       {/* Comments Bottom Sheet */}
