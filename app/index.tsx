@@ -44,7 +44,11 @@ export default function LoginScreen() {
           }}>
             <Icon name="compass" size={40} color={colors.backgroundAlt} />
           </View>
-          <Text style={[commonStyles.title, { fontSize: 32, color: colors.primary }]}>
+          <Text style={[commonStyles.title, { 
+            fontSize: 32, 
+            color: colors.primary,
+            fontFamily: 'Sansita_700Bold'
+          }]}>
             Scoutpost
           </Text>
           <Text style={[commonStyles.textSecondary, { textAlign: 'center' }]}>

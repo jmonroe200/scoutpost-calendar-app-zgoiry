@@ -338,7 +338,10 @@ export default function ProfileScreen() {
         <View style={{ alignItems: 'center', marginTop: 20, paddingBottom: 20 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
             <Icon name="home" size={20} color="#DC2626" style={{ marginRight: 8 }} />
-            <Text style={[commonStyles.textSecondary, { textAlign: 'center' }]}>
+            <Text style={[commonStyles.textSecondary, { 
+              textAlign: 'center',
+              fontFamily: 'Sansita_400Regular'
+            }]}>
               Scoutpost v1.0.0
             </Text>
           </View>

@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { setupErrorLogging } from '../utils/errorLogger';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useFonts, Roboto_400Regular, Roboto_500Medium, Roboto_700Bold } from '@expo-google-fonts/roboto';
+import { Sansita_400Regular, Sansita_700Bold } from '@expo-google-fonts/sansita';
 
 const STORAGE_KEY = 'emulated_device';
 
@@ -18,6 +19,8 @@ export default function RootLayout() {
     Roboto_400Regular,
     Roboto_500Medium,
     Roboto_700Bold,
+    Sansita_400Regular,
+    Sansita_700Bold,
   });
 
   useEffect(() => {
