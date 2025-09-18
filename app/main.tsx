@@ -65,6 +65,8 @@ export default function MainScreen() {
           backgroundColor: activeTab === tab ? colors.primary + '20' : 'transparent',
           borderRadius: 12,
           marginHorizontal: 4,
+          alignItems: 'center',
+          justifyContent: 'center',
         }
       ]}
       onPress={() => setActiveTab(tab)}
@@ -79,7 +81,8 @@ export default function MainScreen() {
         { 
           marginTop: 4,
           color: activeTab === tab ? colors.primary : colors.text,
-          fontWeight: activeTab === tab ? '600' : '400'
+          fontWeight: activeTab === tab ? '600' : '400',
+          textAlign: 'center',
         }
       ]}>
         {label}

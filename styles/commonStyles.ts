@@ -5,7 +5,7 @@ export const colors = {
   primary: '#2E7D32',      // Scout Green
   secondary: '#4E342E',    // Scout Brown
   accent: '#81C784',       // Light Green
-  background: '#FAFAFA',   // Light Grey Background
+  background: '#F2E3BF',   // Light Beige Background
   backgroundAlt: '#FFFFFF', // White
   text: '#212121',         // Dark Grey Text
   textSecondary: '#757575', // Medium Grey Text
@@ -83,6 +83,12 @@ export const commonStyles = StyleSheet.create({
     color: colors.textSecondary,
     lineHeight: 20,
   },
+  textSmall: {
+    fontSize: 12,
+    fontWeight: '400',
+    color: colors.text,
+    textAlign: 'center',
+  },
   section: {
     width: '100%',
     paddingHorizontal: 20,
@@ -106,6 +112,11 @@ export const commonStyles = StyleSheet.create({
   },
   centerRow: {
     flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  centerColumn: {
+    flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
   },
