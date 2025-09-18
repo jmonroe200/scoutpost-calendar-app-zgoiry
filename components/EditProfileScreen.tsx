@@ -6,15 +6,7 @@ import Icon from './Icon';
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import SimpleBottomSheet from './BottomSheet';
-
-interface UserProfile {
-  name: string;
-  email: string;
-  avatar: string;
-  troop: string;
-  role: string;
-  phone: string;
-}
+import { UserProfile } from '../lib/types';
 
 interface EditProfileScreenProps {
   initialProfile: UserProfile;
@@ -74,7 +66,7 @@ export default function EditProfileScreen({ initialProfile, onSave, onCancel }: 
       }
 
       if (!result.canceled && result.assets[0]) {
-        setProfile(prev => ({ ...prev, avatar: result.assets[0].uri }));
+        setProfile(prev => ({ ...prev, avatar_url: result.assets[0].uri }));
         console.log('Image selected:', result.assets[0].uri);
       }
     } catch (error) {
@@ -206,7 +198,7 @@ export default function EditProfileScreen({ initialProfile, onSave, onCancel }: 
             <Text style={[commonStyles.text, { marginBottom: 8, fontWeight: '600' }]}>Phone</Text>
             <TextInput
               style={commonStyles.input}
-              value={profile.phone}
+              value={profile.phone || ''}
               onChangeText={(text) => setProfile(prev => ({ ...prev, phone: text }))}
               placeholder="Enter your phone number"
               placeholderTextColor={colors.textSecondary}
@@ -218,9 +210,9 @@ export default function EditProfileScreen({ initialProfile, onSave, onCancel }: 
             <Text style={[commonStyles.text, { marginBottom: 8, fontWeight: '600' }]}>Troop</Text>
             <TextInput
               style={commonStyles.input}
-              value={profile.troop}
+              value={profile.troop || ''}
               onChangeText={(text) => setProfile(prev => ({ ...prev, troop: text }))}
-              placeholder="Enter your troop"
+              placeholder="Enter your troop (e.g., Troop 123)"
               placeholderTextColor={colors.textSecondary}
             />
           </View>
@@ -229,9 +221,9 @@ export default function EditProfileScreen({ initialProfile, onSave, onCancel }: 
             <Text style={[commonStyles.text, { marginBottom: 8, fontWeight: '600' }]}>Role</Text>
             <TextInput
               style={commonStyles.input}
-              value={profile.role}
+              value={profile.role || ''}
               onChangeText={(text) => setProfile(prev => ({ ...prev, role: text }))}
-              placeholder="Enter your role"
+              placeholder="Enter your role (e.g., Scout, Scoutmaster, Parent)"
               placeholderTextColor={colors.textSecondary}
             />
           </View>

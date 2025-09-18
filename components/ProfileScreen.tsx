@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { commonStyles, colors } from '../styles/commonStyles';
 import Icon from './Icon';
@@ -8,39 +8,75 @@ import SimpleBottomSheet from './BottomSheet';
 import EditProfileScreen from './EditProfileScreen';
 import SettingsScreen from './SettingsScreen';
 import AdminDashboard from './AdminDashboard';
-
-interface UserProfile {
-  name: string;
-  email: string;
-  avatar: string;
-  troop: string;
-  role: string;
-  phone: string;
-  badges: number;
-  events: number;
-  posts: number;
-  isAdmin?: boolean;
-}
+import { supabase } from '../lib/supabase';
+import { UserProfile } from '../lib/types';
 
 export default function ProfileScreen() {
-  // Auto-fill name and email from signup (simulated from login screen)
-  const [user, setUser] = useState<UserProfile>({
-    name: 'Scout Leader', // This would come from signup
-    email: 'leader@scoutpost.com', // This would come from signup
-    avatar: '', // Empty string for generic avatar
-    troop: 'Troop 123',
-    role: 'Scoutmaster',
-    phone: '+1 (555) 123-4567',
-    badges: 15,
-    events: 42,
-    posts: 8,
-    isAdmin: true // Set to true for demo purposes - in real app, this would come from backend
-  });
-
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showAdminDashboard, setShowAdminDashboard] = useState(false);
+
+  // Mock stats - in real app these would come from database
+  const [stats, setStats] = useState({
+    badges: 15,
+    events: 42,
+    posts: 8,
+    isAdmin: false
+  });
+
+  useEffect(() => {
+    loadUserProfile();
+  }, []);
+
+  const loadUserProfile = async () => {
+    try {
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !authUser) {
+        console.error('Auth error:', authError);
+        router.replace('/');
+        return;
+      }
+
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', authUser.id)
+        .single();
+
+      if (profileError) {
+        console.error('Profile error:', profileError);
+        // If no profile exists, create a basic one
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert({
+            user_id: authUser.id,
+            name: authUser.user_metadata?.name || 'Scout User',
+            email: authUser.email || '',
+            troop: '',
+            role: ''
+          });
+
+        if (insertError) {
+          console.error('Profile creation error:', insertError);
+        } else {
+          // Reload profile after creation
+          loadUserProfile();
+          return;
+        }
+      } else {
+        setUser(profile);
+        console.log('Profile loaded:', profile);
+      }
+    } catch (error) {
+      console.error('Error loading profile:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleLogout = () => {
     Alert.alert(
@@ -51,20 +87,56 @@ export default function ProfileScreen() {
         {
           text: 'Logout',
           style: 'destructive',
-          onPress: () => {
-            console.log('User logged out');
-            router.replace('/');
+          onPress: async () => {
+            try {
+              await supabase.auth.signOut();
+              console.log('User logged out');
+              router.replace('/');
+            } catch (error) {
+              console.error('Logout error:', error);
+              Alert.alert('Error', 'Failed to logout. Please try again.');
+            }
           }
         }
       ]
     );
   };
 
-  const handleSaveProfile = (updatedProfile: UserProfile) => {
-    setUser(updatedProfile);
-    setShowEditProfile(false);
-    console.log('Profile updated:', updatedProfile);
-    Alert.alert('Success', 'Profile updated successfully!');
+  const handleSaveProfile = async (updatedProfile: UserProfile) => {
+    try {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      
+      if (!authUser) {
+        Alert.alert('Error', 'User not authenticated');
+        return;
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          name: updatedProfile.name,
+          email: updatedProfile.email,
+          troop: updatedProfile.troop,
+          role: updatedProfile.role,
+          phone: updatedProfile.phone,
+          avatar_url: updatedProfile.avatar_url
+        })
+        .eq('user_id', authUser.id);
+
+      if (error) {
+        console.error('Profile update error:', error);
+        Alert.alert('Error', 'Failed to update profile. Please try again.');
+        return;
+      }
+
+      setUser(updatedProfile);
+      setShowEditProfile(false);
+      console.log('Profile updated:', updatedProfile);
+      Alert.alert('Success', 'Profile updated successfully!');
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+    }
   };
 
   const handleNotifications = () => {
@@ -170,6 +242,28 @@ export default function ProfileScreen() {
     </View>
   );
 
+  if (isLoading) {
+    return (
+      <View style={[commonStyles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={commonStyles.text}>Loading profile...</Text>
+      </View>
+    );
+  }
+
+  if (!user) {
+    return (
+      <View style={[commonStyles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={commonStyles.text}>Failed to load profile</Text>
+        <TouchableOpacity
+          style={[commonStyles.button, { marginTop: 20 }]}
+          onPress={loadUserProfile}
+        >
+          <Text style={commonStyles.buttonText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   if (showEditProfile) {
     return (
       <EditProfileScreen
@@ -234,9 +328,9 @@ export default function ProfileScreen() {
             {user.name}
           </Text>
           <Text style={[commonStyles.textSecondary, { marginBottom: 8 }]}>
-            {user.role} • {user.troop}
+            {user.role && user.troop ? `${user.role} • ${user.troop}` : (user.role || user.troop || 'Complete your profile')}
           </Text>
-          {user.isAdmin && (
+          {stats.isAdmin && (
             <View style={{
               backgroundColor: colors.warning,
               paddingHorizontal: 12,
@@ -260,19 +354,19 @@ export default function ProfileScreen() {
           <StatCard
             icon="ribbon"
             label="Badges"
-            value={user.badges}
+            value={stats.badges}
             color={colors.warning}
           />
           <StatCard
             icon="calendar"
             label="Events"
-            value={user.events}
+            value={stats.events}
             color={colors.primary}
           />
           <StatCard
             icon="chatbubbles"
             label="Posts"
-            value={user.posts}
+            value={stats.posts}
             color={colors.info}
           />
         </View>
@@ -291,7 +385,7 @@ export default function ProfileScreen() {
         />
 
         {/* Admin Dashboard - Only show for admin users */}
-        {user.isAdmin && (
+        {stats.isAdmin && (
           <MenuButton
             icon="shield-checkmark"
             label="Admin Dashboard"
