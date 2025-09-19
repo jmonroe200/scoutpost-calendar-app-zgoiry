@@ -452,21 +452,37 @@ export default function CommunityFeedSection() {
 
   return (
     <View style={{ flex: 1 }}>
-      {/* Community Feed Header */}
-      <View style={[commonStyles.row, { marginBottom: 16 }]}>
-        <Text style={[commonStyles.title, { textAlign: 'center', flex: 1 }]}>Community Feed</Text>
+      {/* Centered Round New Post Button */}
+      <View style={{ alignItems: 'center', marginBottom: 20 }}>
         <TouchableOpacity
           onPress={() => setShowCreatePost(true)}
           style={{
+            width: 60,
+            height: 60,
+            borderRadius: 30,
             backgroundColor: colors.primary,
-            paddingHorizontal: 12,
-            paddingVertical: 6,
-            borderRadius: 6,
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0px 4px 12px rgba(46, 125, 50, 0.3)',
+            elevation: 6,
           }}
         >
-          <Text style={{ color: colors.backgroundAlt, fontSize: 14, fontWeight: '600' }}>
-            New Post
-          </Text>
+          <View style={{ position: 'relative' }}>
+            <Icon name="create" size={24} color={colors.backgroundAlt} />
+            <View style={{
+              position: 'absolute',
+              top: -2,
+              right: -2,
+              width: 12,
+              height: 12,
+              borderRadius: 6,
+              backgroundColor: colors.backgroundAlt,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+              <Icon name="add" size={8} color={colors.primary} />
+            </View>
+          </View>
         </TouchableOpacity>
       </View>
 
