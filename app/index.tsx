@@ -145,7 +145,8 @@ export default function LoginScreen() {
             borderRadius: 40,
             alignItems: 'center',
             justifyContent: 'center',
-            marginBottom: 20,
+            marginTop: 20,
+            marginBottom: 12,
           }}>
             <Image 
               source={require('../assets/images/006a9a79-1c40-4999-ba26-8d0a58a09b1d.jpeg')}
