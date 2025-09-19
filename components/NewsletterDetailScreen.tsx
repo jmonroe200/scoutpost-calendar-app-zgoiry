@@ -151,8 +151,8 @@ export default function NewsletterDetailScreen({ newsletter, isVisible, onClose 
       presentationStyle="fullScreen"
       onRequestClose={onClose}
     >
-      <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
-      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
         {/* Header */}
         <View style={[
           commonStyles.row,
@@ -161,7 +161,7 @@ export default function NewsletterDetailScreen({ newsletter, isVisible, onClose 
             paddingVertical: 16,
             borderBottomWidth: 1,
             borderBottomColor: colors.border,
-            backgroundColor: colors.background,
+            backgroundColor: '#FFFFFF',
           }
         ]}>
           <TouchableOpacity
@@ -191,8 +191,8 @@ export default function NewsletterDetailScreen({ newsletter, isVisible, onClose 
           </View>
         </View>
 
-        {/* Content - Removed margins and made text larger */}
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 20 }}>
+        {/* Content - White background */}
+        <ScrollView style={{ flex: 1, backgroundColor: '#FFFFFF' }} contentContainerStyle={{ paddingVertical: 20 }}>
           {/* Newsletter Header */}
           <View style={{
             backgroundColor: colors.backgroundAlt,
