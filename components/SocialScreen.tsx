@@ -6,6 +6,7 @@ import Icon from './Icon';
 import SimpleBottomSheet from './BottomSheet';
 import CreatePostScreen from './CreatePostScreen';
 import NewsletterDetailScreen from './NewsletterDetailScreen';
+import PreviousNewslettersScreen from './PreviousNewslettersScreen';
 import { supabase } from '../lib/supabase';
 import { Newsletter } from '../lib/types';
 
@@ -32,14 +33,14 @@ interface Comment {
 }
 
 export default function SocialScreen() {
-  const [newsletters, setNewsletters] = useState<Newsletter[]>([]);
-  const [showNewsletters, setShowNewsletters] = useState(true);
+  const [latestNewsletter, setLatestNewsletter] = useState<Newsletter | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [selectedNewsletter, setSelectedNewsletter] = useState<Newsletter | null>(null);
+  const [showPreviousNewsletters, setShowPreviousNewsletters] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -53,7 +54,7 @@ export default function SocialScreen() {
       setCurrentUser(user);
       
       await Promise.all([
-        loadPublishedNewsletters(),
+        loadLatestNewsletter(),
         loadPosts(),
         loadComments()
       ]);
@@ -64,24 +65,24 @@ export default function SocialScreen() {
     }
   };
 
-  const loadPublishedNewsletters = async () => {
+  const loadLatestNewsletter = async () => {
     try {
       const { data, error } = await supabase
         .from('newsletters')
         .select('*')
         .eq('status', 'published')
         .order('published_at', { ascending: false })
-        .limit(3);
+        .limit(1);
 
       if (error) {
-        console.error('Error loading newsletters:', error);
+        console.error('Error loading latest newsletter:', error);
         return;
       }
 
-      setNewsletters(data || []);
-      console.log('Loaded published newsletters:', data?.length || 0);
+      setLatestNewsletter(data && data.length > 0 ? data[0] : null);
+      console.log('Loaded latest newsletter:', data && data.length > 0 ? data[0].title : 'None');
     } catch (error) {
-      console.error('Unexpected error loading newsletters:', error);
+      console.error('Unexpected error loading latest newsletter:', error);
     }
   };
 
@@ -535,13 +536,14 @@ export default function SocialScreen() {
     );
   };
 
-  const NewsletterCard = ({ newsletter }: { newsletter: Newsletter }) => (
+  const LatestNewsletterCard = ({ newsletter }: { newsletter: Newsletter }) => (
     <TouchableOpacity
       style={[commonStyles.card, { 
         backgroundColor: colors.backgroundAlt, 
         borderLeftWidth: 4, 
         borderLeftColor: colors.primary,
         borderRadius: 12,
+        marginBottom: 16,
       }]}
       onPress={() => setSelectedNewsletter(newsletter)}
       activeOpacity={0.7}
@@ -562,7 +564,7 @@ export default function SocialScreen() {
             fontSize: 10,
             fontWeight: '600',
           }}>
-            NEWSLETTER
+            LATEST
           </Text>
         </View>
       </View>
@@ -601,31 +603,35 @@ export default function SocialScreen() {
     <View style={{ flex: 1 }}>
       <ScrollView style={{ flex: 1 }}>
         <View style={commonStyles.section}>
-          {/* Newsletter Section */}
-          {newsletters.length > 0 && (
+          {/* Latest Newsletter Section */}
+          {latestNewsletter && (
             <>
-              <View style={commonStyles.row}>
-                <Text style={commonStyles.subtitle}>Latest Newsletters</Text>
+              <View style={[commonStyles.row, { marginBottom: 16 }]}>
+                <Text style={commonStyles.subtitle}>Latest Newsletter</Text>
                 <TouchableOpacity
-                  onPress={() => setShowNewsletters(!showNewsletters)}
+                  onPress={() => setShowPreviousNewsletters(true)}
                   style={{
                     backgroundColor: colors.info,
-                    paddingHorizontal: 8,
-                    paddingVertical: 4,
-                    borderRadius: 4,
+                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                    borderRadius: 6,
+                    flexDirection: 'row',
+                    alignItems: 'center',
                   }}
                 >
-                  <Icon 
-                    name={showNewsletters ? 'chevron-up' : 'chevron-down'} 
-                    size={16} 
-                    color={colors.backgroundAlt} 
-                  />
+                  <Icon name="library" size={14} color={colors.backgroundAlt} />
+                  <Text style={{ 
+                    color: colors.backgroundAlt, 
+                    fontSize: 12, 
+                    fontWeight: '600',
+                    marginLeft: 4,
+                  }}>
+                    View Previous
+                  </Text>
                 </TouchableOpacity>
               </View>
 
-              {showNewsletters && newsletters.map((newsletter) => (
-                <NewsletterCard key={newsletter.id} newsletter={newsletter} />
-              ))}
+              <LatestNewsletterCard newsletter={latestNewsletter} />
             </>
           )}
 
@@ -677,6 +683,12 @@ export default function SocialScreen() {
         newsletter={selectedNewsletter}
         isVisible={!!selectedNewsletter}
         onClose={() => setSelectedNewsletter(null)}
+      />
+
+      {/* Previous Newsletters Modal */}
+      <PreviousNewslettersScreen
+        isVisible={showPreviousNewsletters}
+        onClose={() => setShowPreviousNewsletters(false)}
       />
 
       {/* Comments Bottom Sheet */}
