@@ -686,7 +686,7 @@ export default function SocialScreen() {
       >
         {selectedPost && (
           <View style={{ padding: 20, maxHeight: 600 }}>
-            <Text style={[commonStyles.title, { textAlign: 'left', marginBottom: 20 }]}>
+            <Text style={[commonStyles.title, { marginBottom: 20 }]}>
               Comments
             </Text>
 

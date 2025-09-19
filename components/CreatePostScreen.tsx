@@ -79,7 +79,7 @@ export default function CreatePostScreen({ isVisible, onClose, onCreatePost }: C
             <Icon name="close" size={24} color={colors.text} />
           </TouchableOpacity>
 
-          <Text style={[commonStyles.title, { fontSize: 18, flex: 1, textAlign: 'center', marginHorizontal: 16 }]}>
+          <Text style={[commonStyles.title, { fontSize: 18, flex: 1, marginHorizontal: 16 }]}>
             Create New Post
           </Text>
 

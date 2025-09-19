@@ -268,7 +268,7 @@ export default function CalendarScreen() {
                           }}>
                             <Icon name={getEventTypeIcon(event.type) as any} size={16} color={colors.backgroundAlt} />
                           </View>
-                          <Text style={[commonStyles.subtitle, { marginBottom: 0 }]}>
+                          <Text style={[commonStyles.subtitle, { marginBottom: 0, textAlign: 'left' }]}>
                             {event.title}
                           </Text>
                         </View>
@@ -332,7 +332,7 @@ export default function CalendarScreen() {
                           }}>
                             <Icon name={getEventTypeIcon(event.type) as any} size={16} color={colors.backgroundAlt} />
                           </View>
-                          <Text style={[commonStyles.subtitle, { marginBottom: 0 }]}>
+                          <Text style={[commonStyles.subtitle, { marginBottom: 0, textAlign: 'left' }]}>
                             {event.title}
                           </Text>
                         </View>

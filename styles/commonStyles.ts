@@ -70,6 +70,7 @@ export const commonStyles = StyleSheet.create({
     fontFamily: 'Sansita_700Bold',
     color: colors.text,
     marginBottom: 8,
+    textAlign: 'center',
   },
   text: {
     fontSize: 16,
