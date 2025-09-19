@@ -1,11 +1,12 @@
 
 import Icon from './Icon';
 import { supabase } from '../lib/supabase';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { Newsletter } from '../lib/types';
 import React, { useState, useEffect } from 'react';
 import NewsletterDetailScreen from './NewsletterDetailScreen';
 import { commonStyles, colors } from '../styles/commonStyles';
+import * as Linking from 'expo-linking';
 
 export default function NewsletterSection() {
   const [newsletters, setNewsletters] = useState<Newsletter[]>([]);
@@ -47,6 +48,21 @@ export default function NewsletterSection() {
     });
   };
 
+  const handleLinkPress = async (url: string) => {
+    try {
+      const canOpen = await Linking.canOpenURL(url);
+      if (canOpen) {
+        await Linking.openURL(url);
+        console.log('Opened URL:', url);
+      } else {
+        Alert.alert('Error', 'Cannot open this link');
+      }
+    } catch (error) {
+      console.error('Error opening link:', error);
+      Alert.alert('Error', 'Failed to open link');
+    }
+  };
+
   const renderStyledPreview = (text: string, maxLines: number = 3) => {
     if (!text) return null;
     
@@ -63,7 +79,7 @@ export default function NewsletterSection() {
             marginBottom: 4,
             color: colors.primary 
           }]} numberOfLines={1}>
-            {line.substring(2)}
+            {renderInlineStylesPreview(line.substring(2))}
           </Text>
         );
       }
@@ -96,6 +112,58 @@ export default function NewsletterSection() {
     const elements: React.ReactNode[] = [];
     let remainingText = text;
     let keyIndex = 0;
+
+    // Process links first [display text](url) - but don't make them clickable in preview
+    while (remainingText.includes('[') && remainingText.includes('](') && remainingText.includes(')')) {
+      const linkStartIndex = remainingText.indexOf('[');
+      const linkMiddleIndex = remainingText.indexOf('](', linkStartIndex);
+      const linkEndIndex = remainingText.indexOf(')', linkMiddleIndex);
+      
+      if (linkStartIndex === -1 || linkMiddleIndex === -1 || linkEndIndex === -1 || 
+          linkMiddleIndex <= linkStartIndex || linkEndIndex <= linkMiddleIndex) {
+        break;
+      }
+
+      // Add text before link
+      if (linkStartIndex > 0) {
+        const beforeLinkText = remainingText.substring(0, linkStartIndex);
+        elements.push(processTextForOtherStylesPreview(beforeLinkText, keyIndex));
+        keyIndex += 100; // Increment to avoid key conflicts
+      }
+
+      // Extract link parts
+      const displayText = remainingText.substring(linkStartIndex + 1, linkMiddleIndex);
+      const url = remainingText.substring(linkMiddleIndex + 2, linkEndIndex);
+
+      // Add link text (not clickable in preview)
+      elements.push(
+        <Text 
+          key={keyIndex++} 
+          style={{ 
+            color: colors.info, 
+            textDecorationLine: 'underline',
+            fontWeight: '500'
+          }}
+        >
+          {displayText}
+        </Text>
+      );
+
+      remainingText = remainingText.substring(linkEndIndex + 1);
+    }
+
+    // Process remaining text for other styles
+    if (remainingText) {
+      elements.push(processTextForOtherStylesPreview(remainingText, keyIndex));
+    }
+
+    return elements.length > 0 ? elements : text;
+  };
+
+  const processTextForOtherStylesPreview = (text: string, startKeyIndex: number) => {
+    const elements: React.ReactNode[] = [];
+    let remainingText = text;
+    let keyIndex = startKeyIndex;
 
     // Process bold text (**text**)
     while (remainingText.includes('**')) {

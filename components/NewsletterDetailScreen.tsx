@@ -1,10 +1,11 @@
 
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Modal, StatusBar } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Modal, StatusBar, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { commonStyles, colors } from '../styles/commonStyles';
 import Icon from './Icon';
 import { Newsletter } from '../lib/types';
+import * as Linking from 'expo-linking';
 
 interface NewsletterDetailScreenProps {
   newsletter: Newsletter | null;
@@ -23,6 +24,21 @@ export default function NewsletterDetailScreen({ newsletter, isVisible, onClose 
       hour: '2-digit',
       minute: '2-digit',
     });
+  };
+
+  const handleLinkPress = async (url: string) => {
+    try {
+      const canOpen = await Linking.canOpenURL(url);
+      if (canOpen) {
+        await Linking.openURL(url);
+        console.log('Opened URL:', url);
+      } else {
+        Alert.alert('Error', 'Cannot open this link');
+      }
+    } catch (error) {
+      console.error('Error opening link:', error);
+      Alert.alert('Error', 'Failed to open link');
+    }
   };
 
   const renderStyledContent = (text: string) => {
@@ -44,7 +60,7 @@ export default function NewsletterDetailScreen({ newsletter, isVisible, onClose 
             marginTop: lineIndex > 0 ? 12 : 0,
             color: colors.primary 
           }]}>
-            {line.substring(2)}
+            {renderInlineStyles(line.substring(2))}
           </Text>
         );
       }
@@ -78,6 +94,61 @@ export default function NewsletterDetailScreen({ newsletter, isVisible, onClose 
     const elements: React.ReactNode[] = [];
     let remainingText = text;
     let keyIndex = 0;
+
+    // Process links first [display text](url)
+    while (remainingText.includes('[') && remainingText.includes('](') && remainingText.includes(')')) {
+      const linkStartIndex = remainingText.indexOf('[');
+      const linkMiddleIndex = remainingText.indexOf('](', linkStartIndex);
+      const linkEndIndex = remainingText.indexOf(')', linkMiddleIndex);
+      
+      if (linkStartIndex === -1 || linkMiddleIndex === -1 || linkEndIndex === -1 || 
+          linkMiddleIndex <= linkStartIndex || linkEndIndex <= linkMiddleIndex) {
+        break;
+      }
+
+      // Add text before link
+      if (linkStartIndex > 0) {
+        const beforeLinkText = remainingText.substring(0, linkStartIndex);
+        elements.push(processTextForOtherStyles(beforeLinkText, keyIndex));
+        keyIndex += 100; // Increment to avoid key conflicts
+      }
+
+      // Extract link parts
+      const displayText = remainingText.substring(linkStartIndex + 1, linkMiddleIndex);
+      const url = remainingText.substring(linkMiddleIndex + 2, linkEndIndex);
+
+      // Add clickable link
+      elements.push(
+        <TouchableOpacity 
+          key={keyIndex++} 
+          onPress={() => handleLinkPress(url)}
+          style={{ display: 'contents' }}
+        >
+          <Text style={{ 
+            color: colors.info, 
+            textDecorationLine: 'underline',
+            fontWeight: '500'
+          }}>
+            {displayText}
+          </Text>
+        </TouchableOpacity>
+      );
+
+      remainingText = remainingText.substring(linkEndIndex + 1);
+    }
+
+    // Process remaining text for other styles
+    if (remainingText) {
+      elements.push(processTextForOtherStyles(remainingText, keyIndex));
+    }
+
+    return elements.length > 0 ? elements : text;
+  };
+
+  const processTextForOtherStyles = (text: string, startKeyIndex: number) => {
+    const elements: React.ReactNode[] = [];
+    let remainingText = text;
+    let keyIndex = startKeyIndex;
 
     // Process bold text (**text**)
     while (remainingText.includes('**')) {

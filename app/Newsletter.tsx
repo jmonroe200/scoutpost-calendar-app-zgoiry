@@ -8,6 +8,7 @@ import Icon from '../components/Icon';
 import TextStyleEditor from '../components/TextStyleEditor';
 import { supabase } from '../lib/supabase';
 import { UserProfile } from '../lib/types';
+import * as Linking from 'expo-linking';
 
 interface Newsletter {
   id: string;
@@ -241,6 +242,21 @@ export default function NewsletterScreen() {
     }
   };
 
+  const handleLinkPress = async (url: string) => {
+    try {
+      const canOpen = await Linking.canOpenURL(url);
+      if (canOpen) {
+        await Linking.openURL(url);
+        console.log('Opened URL:', url);
+      } else {
+        Alert.alert('Error', 'Cannot open this link');
+      }
+    } catch (error) {
+      console.error('Error opening link:', error);
+      Alert.alert('Error', 'Failed to open link');
+    }
+  };
+
   const renderStyledPreview = (text: string) => {
     const lines = text.split('\n');
     
@@ -254,7 +270,7 @@ export default function NewsletterScreen() {
             marginBottom: 4,
             color: colors.primary 
           }]}>
-            {line.substring(2)}
+            {renderInlineStylesPreview(line.substring(2))}
           </Text>
         );
       }
@@ -265,15 +281,15 @@ export default function NewsletterScreen() {
           <View key={lineIndex} style={{ flexDirection: 'row', marginBottom: 4 }}>
             <Text style={[commonStyles.textSecondary, { marginRight: 6 }]}>•</Text>
             <Text style={[commonStyles.textSecondary, { flex: 1 }]} numberOfLines={1}>
-              {line.substring(2).replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1')}
+              {renderInlineStylesPreview(line.substring(2))}
             </Text>
           </View>
         );
       }
 
       // Handle regular text (strip formatting for preview)
-      const cleanText = line.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1');
-      if (cleanText.trim()) {
+      const cleanText = renderInlineStylesPreview(line);
+      if (line.trim()) {
         return (
           <Text key={lineIndex} style={[commonStyles.textSecondary, { marginBottom: 4 }]} numberOfLines={1}>
             {cleanText}
@@ -282,6 +298,128 @@ export default function NewsletterScreen() {
       }
       return null;
     }).filter(Boolean);
+  };
+
+  const renderInlineStylesPreview = (text: string) => {
+    const elements: React.ReactNode[] = [];
+    let remainingText = text;
+    let keyIndex = 0;
+
+    // Process links first [display text](url) - but don't make them clickable in preview
+    while (remainingText.includes('[') && remainingText.includes('](') && remainingText.includes(')')) {
+      const linkStartIndex = remainingText.indexOf('[');
+      const linkMiddleIndex = remainingText.indexOf('](', linkStartIndex);
+      const linkEndIndex = remainingText.indexOf(')', linkMiddleIndex);
+      
+      if (linkStartIndex === -1 || linkMiddleIndex === -1 || linkEndIndex === -1 || 
+          linkMiddleIndex <= linkStartIndex || linkEndIndex <= linkMiddleIndex) {
+        break;
+      }
+
+      // Add text before link
+      if (linkStartIndex > 0) {
+        const beforeLinkText = remainingText.substring(0, linkStartIndex);
+        elements.push(processTextForOtherStylesPreview(beforeLinkText, keyIndex));
+        keyIndex += 100; // Increment to avoid key conflicts
+      }
+
+      // Extract link parts
+      const displayText = remainingText.substring(linkStartIndex + 1, linkMiddleIndex);
+      const url = remainingText.substring(linkMiddleIndex + 2, linkEndIndex);
+
+      // Add link text (not clickable in preview)
+      elements.push(
+        <Text 
+          key={keyIndex++} 
+          style={{ 
+            color: colors.info, 
+            textDecorationLine: 'underline',
+            fontWeight: '500'
+          }}
+        >
+          {displayText}
+        </Text>
+      );
+
+      remainingText = remainingText.substring(linkEndIndex + 1);
+    }
+
+    // Process remaining text for other styles
+    if (remainingText) {
+      elements.push(processTextForOtherStylesPreview(remainingText, keyIndex));
+    }
+
+    return elements.length > 0 ? elements : text;
+  };
+
+  const processTextForOtherStylesPreview = (text: string, startKeyIndex: number) => {
+    const elements: React.ReactNode[] = [];
+    let remainingText = text;
+    let keyIndex = startKeyIndex;
+
+    // Process bold text (**text**)
+    while (remainingText.includes('**')) {
+      const startIndex = remainingText.indexOf('**');
+      const endIndex = remainingText.indexOf('**', startIndex + 2);
+      
+      if (endIndex === -1) break;
+
+      // Add text before bold
+      if (startIndex > 0) {
+        elements.push(remainingText.substring(0, startIndex));
+      }
+
+      // Add bold text
+      const boldText = remainingText.substring(startIndex + 2, endIndex);
+      elements.push(
+        <Text key={keyIndex++} style={{ fontWeight: 'bold' }}>
+          {boldText}
+        </Text>
+      );
+
+      remainingText = remainingText.substring(endIndex + 2);
+    }
+
+    // Process italic text (*text*) on remaining text
+    let processedText = remainingText;
+    remainingText = '';
+    let tempElements: React.ReactNode[] = [];
+
+    while (processedText.includes('*')) {
+      const startIndex = processedText.indexOf('*');
+      const endIndex = processedText.indexOf('*', startIndex + 1);
+      
+      if (endIndex === -1) break;
+
+      // Add text before italic
+      if (startIndex > 0) {
+        tempElements.push(processedText.substring(0, startIndex));
+      }
+
+      // Add italic text
+      const italicText = processedText.substring(startIndex + 1, endIndex);
+      tempElements.push(
+        <Text key={keyIndex++} style={{ fontStyle: 'italic' }}>
+          {italicText}
+        </Text>
+      );
+
+      processedText = processedText.substring(endIndex + 1);
+    }
+
+    // Add remaining text
+    if (processedText) {
+      tempElements.push(processedText);
+    }
+
+    elements.push(...tempElements);
+
+    // If no styling was applied, return the original text
+    if (elements.length === 0) {
+      return remainingText || text;
+    }
+
+    return elements;
   };
 
   if (loading) {
@@ -360,6 +498,7 @@ Use the formatting toolbar above to style your text:
 • *Italic text* for subtle emphasis  
 • # Headings for section titles
 • • Bullet points for lists
+• [Link text](URL) for clickable links
 
 Example:
 # Weekly Update
@@ -367,7 +506,9 @@ This week we had an amazing **camping trip**!
 
 • Great weather
 • Fun activities  
-• *Excellent* teamwork"
+• *Excellent* teamwork
+
+Check out our photos at [Troop Website](https://example.com)"
             />
           </View>
 
@@ -453,7 +594,7 @@ This week we had an amazing **camping trip**!
               Create Styled Newsletter
             </Text>
             <Text style={[commonStyles.textSecondary, { textAlign: 'center', marginTop: 4 }]}>
-              Use rich text formatting to create engaging newsletters
+              Use rich text formatting and embed links to create engaging newsletters
             </Text>
           </TouchableOpacity>
 
@@ -544,7 +685,7 @@ This week we had an amazing **camping trip**!
                 No newsletters yet
               </Text>
               <Text style={[commonStyles.textSecondary, { textAlign: 'center', marginTop: 4 }]}>
-                Create your first styled newsletter to share updates with your troop
+                Create your first styled newsletter with embedded links to share updates with your troop
               </Text>
             </View>
           )}

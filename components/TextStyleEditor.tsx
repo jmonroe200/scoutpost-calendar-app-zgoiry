@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, TextInput, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, ScrollView, Alert, Modal } from 'react-native';
 import { commonStyles, colors } from '../styles/commonStyles';
 import Icon from './Icon';
 
@@ -18,10 +18,129 @@ interface StyleButton {
   suffix: string;
 }
 
+interface LinkModalProps {
+  isVisible: boolean;
+  onClose: () => void;
+  onAddLink: (url: string, displayText: string) => void;
+  selectedText?: string;
+}
+
+const LinkModal = ({ isVisible, onClose, onAddLink, selectedText }: LinkModalProps) => {
+  const [url, setUrl] = useState('');
+  const [displayText, setDisplayText] = useState(selectedText || '');
+
+  const handleAddLink = () => {
+    if (!url.trim()) {
+      Alert.alert('Error', 'Please enter a valid URL');
+      return;
+    }
+    
+    if (!displayText.trim()) {
+      Alert.alert('Error', 'Please enter display text for the link');
+      return;
+    }
+
+    // Add https:// if no protocol is specified
+    let formattedUrl = url.trim();
+    if (!formattedUrl.startsWith('http://') && !formattedUrl.startsWith('https://')) {
+      formattedUrl = 'https://' + formattedUrl;
+    }
+
+    onAddLink(formattedUrl, displayText.trim());
+    setUrl('');
+    setDisplayText('');
+    onClose();
+  };
+
+  const handleClose = () => {
+    setUrl('');
+    setDisplayText('');
+    onClose();
+  };
+
+  return (
+    <Modal
+      visible={isVisible}
+      transparent={true}
+      animationType="fade"
+      onRequestClose={handleClose}
+    >
+      <View style={{
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+      }}>
+        <View style={{
+          backgroundColor: colors.backgroundAlt,
+          borderRadius: 12,
+          padding: 20,
+          width: '100%',
+          maxWidth: 400,
+        }}>
+          <Text style={[commonStyles.text, { fontWeight: '600', marginBottom: 16, textAlign: 'center' }]}>
+            Add Link
+          </Text>
+
+          <Text style={[commonStyles.textSecondary, { marginBottom: 8 }]}>
+            Display Text
+          </Text>
+          <TextInput
+            style={[commonStyles.input, { marginBottom: 16 }]}
+            placeholder="Enter text to display"
+            value={displayText}
+            onChangeText={setDisplayText}
+            placeholderTextColor={colors.textSecondary}
+          />
+
+          <Text style={[commonStyles.textSecondary, { marginBottom: 8 }]}>
+            URL
+          </Text>
+          <TextInput
+            style={[commonStyles.input, { marginBottom: 20 }]}
+            placeholder="Enter URL (e.g., example.com)"
+            value={url}
+            onChangeText={setUrl}
+            placeholderTextColor={colors.textSecondary}
+            keyboardType="url"
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            <TouchableOpacity
+              style={[commonStyles.button, { 
+                flex: 1,
+                backgroundColor: colors.textSecondary,
+              }]}
+              onPress={handleClose}
+            >
+              <Text style={[commonStyles.buttonText, { color: colors.backgroundAlt }]}>
+                Cancel
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={[commonStyles.button, { flex: 1 }]}
+              onPress={handleAddLink}
+            >
+              <Text style={commonStyles.buttonText}>
+                Add Link
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
 export default function TextStyleEditor({ value, onChangeText, placeholder }: TextStyleEditorProps) {
   const [selectionStart, setSelectionStart] = useState(0);
   const [selectionEnd, setSelectionEnd] = useState(0);
   const [showPreview, setShowPreview] = useState(false);
+  const [showLinkModal, setShowLinkModal] = useState(false);
 
   const styleButtons: StyleButton[] = [
     { id: 'bold', icon: 'text', label: 'Bold', prefix: '**', suffix: '**' },
@@ -70,6 +189,24 @@ export default function TextStyleEditor({ value, onChangeText, placeholder }: Te
     console.log('Applied style:', style.id);
   };
 
+  const handleAddLink = () => {
+    const selectedText = value.substring(selectionStart, selectionEnd);
+    setShowLinkModal(true);
+    console.log('Opening link modal with selected text:', selectedText);
+  };
+
+  const insertLink = (url: string, displayText: string) => {
+    const beforeSelection = value.substring(0, selectionStart);
+    const afterSelection = value.substring(selectionEnd);
+    
+    // Use markdown link format: [display text](url)
+    const linkText = `[${displayText}](${url})`;
+    const newText = beforeSelection + linkText + afterSelection;
+    
+    onChangeText(newText);
+    console.log('Inserted link:', linkText);
+  };
+
   const renderStyledText = (text: string) => {
     const lines = text.split('\n');
     
@@ -87,7 +224,7 @@ export default function TextStyleEditor({ value, onChangeText, placeholder }: Te
             marginBottom: 12,
             color: colors.primary 
           }]}>
-            {line.substring(2)}
+            {renderInlineStyles(line.substring(2))}
           </Text>
         );
       }
@@ -121,6 +258,63 @@ export default function TextStyleEditor({ value, onChangeText, placeholder }: Te
     let remainingText = text;
     let keyIndex = 0;
 
+    // Process links first [display text](url)
+    while (remainingText.includes('[') && remainingText.includes('](') && remainingText.includes(')')) {
+      const linkStartIndex = remainingText.indexOf('[');
+      const linkMiddleIndex = remainingText.indexOf('](', linkStartIndex);
+      const linkEndIndex = remainingText.indexOf(')', linkMiddleIndex);
+      
+      if (linkStartIndex === -1 || linkMiddleIndex === -1 || linkEndIndex === -1 || 
+          linkMiddleIndex <= linkStartIndex || linkEndIndex <= linkMiddleIndex) {
+        break;
+      }
+
+      // Add text before link
+      if (linkStartIndex > 0) {
+        const beforeLinkText = remainingText.substring(0, linkStartIndex);
+        elements.push(processTextForOtherStyles(beforeLinkText, keyIndex));
+        keyIndex += 100; // Increment to avoid key conflicts
+      }
+
+      // Extract link parts
+      const displayText = remainingText.substring(linkStartIndex + 1, linkMiddleIndex);
+      const url = remainingText.substring(linkMiddleIndex + 2, linkEndIndex);
+
+      // Add clickable link
+      elements.push(
+        <Text 
+          key={keyIndex++} 
+          style={{ 
+            color: colors.info, 
+            textDecorationLine: 'underline',
+            fontWeight: '500'
+          }}
+          onPress={() => {
+            console.log('Link pressed:', url);
+            // Note: In a real app, you'd use Linking.openURL(url) here
+            Alert.alert('Link', `Would open: ${url}`);
+          }}
+        >
+          {displayText}
+        </Text>
+      );
+
+      remainingText = remainingText.substring(linkEndIndex + 1);
+    }
+
+    // Process remaining text for other styles
+    if (remainingText) {
+      elements.push(processTextForOtherStyles(remainingText, keyIndex));
+    }
+
+    return elements.length > 0 ? elements : text;
+  };
+
+  const processTextForOtherStyles = (text: string, startKeyIndex: number) => {
+    const elements: React.ReactNode[] = [];
+    let remainingText = text;
+    let keyIndex = startKeyIndex;
+
     // Process bold text (**text**)
     while (remainingText.includes('**')) {
       const startIndex = remainingText.indexOf('**');
@@ -144,7 +338,7 @@ export default function TextStyleEditor({ value, onChangeText, placeholder }: Te
       remainingText = remainingText.substring(endIndex + 2);
     }
 
-    // Process italic text (*text*)
+    // Process italic text (*text*) on remaining text
     let processedText = remainingText;
     remainingText = '';
     let tempElements: React.ReactNode[] = [];
@@ -222,6 +416,26 @@ export default function TextStyleEditor({ value, onChangeText, placeholder }: Te
                 </Text>
               </TouchableOpacity>
             ))}
+            
+            {/* Link Button */}
+            <TouchableOpacity
+              onPress={handleAddLink}
+              style={{
+                backgroundColor: colors.background,
+                paddingHorizontal: 12,
+                paddingVertical: 8,
+                borderRadius: 6,
+                borderWidth: 1,
+                borderColor: colors.border,
+                alignItems: 'center',
+                minWidth: 60,
+              }}
+            >
+              <Icon name="link" size={16} color={colors.info} />
+              <Text style={[commonStyles.textSecondary, { fontSize: 10, marginTop: 2 }]}>
+                Link
+              </Text>
+            </TouchableOpacity>
           </View>
         </ScrollView>
 
@@ -272,7 +486,7 @@ export default function TextStyleEditor({ value, onChangeText, placeholder }: Te
             padding: 16,
             borderRadius: 8,
           }]}
-          placeholder={placeholder || "Start typing your newsletter content...\n\nFormatting tips:\n• Use **bold** for bold text\n• Use *italic* for italic text\n• Start lines with # for headings\n• Start lines with • for bullet points"}
+          placeholder={placeholder || "Start typing your newsletter content...\n\nFormatting tips:\n• Use **bold** for bold text\n• Use *italic* for italic text\n• Start lines with # for headings\n• Start lines with • for bullet points\n• Use [text](url) for links"}
           value={value}
           onChangeText={onChangeText}
           onSelectionChange={(event) => {
@@ -293,9 +507,17 @@ export default function TextStyleEditor({ value, onChangeText, placeholder }: Te
         borderTopColor: colors.border,
       }}>
         <Text style={[commonStyles.textSecondary, { fontSize: 12, textAlign: 'center' }]}>
-          Select text and tap formatting buttons, or use markdown: **bold**, *italic*, # heading, • bullet
+          Select text and tap formatting buttons, or use markdown: **bold**, *italic*, # heading, • bullet, [text](url)
         </Text>
       </View>
+
+      {/* Link Modal */}
+      <LinkModal
+        isVisible={showLinkModal}
+        onClose={() => setShowLinkModal(false)}
+        onAddLink={insertLink}
+        selectedText={value.substring(selectionStart, selectionEnd)}
+      />
     </View>
   );
 }
