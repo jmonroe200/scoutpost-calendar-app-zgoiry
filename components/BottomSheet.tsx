@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
@@ -20,10 +21,10 @@ interface SimpleBottomSheetProps {
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-// Snap positions for the bottom sheet
+// Snap positions for the bottom sheet - now allows full screen
 const SNAP_POINTS = {
   HALF: SCREEN_HEIGHT * 0.5,
-  FULL: SCREEN_HEIGHT * 0.8,
+  FULL: SCREEN_HEIGHT * 0.95, // Changed from 0.8 to 0.95 to allow almost full screen
   CLOSED: SCREEN_HEIGHT,
 };
 
@@ -218,7 +219,7 @@ const styles = StyleSheet.create({
   },
   bottomSheet: {
     height: SNAP_POINTS.FULL,
-    backgroundColor: colors.background || '#ffffff',
+    backgroundColor: '#ffffff', // Changed to white background
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     shadowColor: '#000',
