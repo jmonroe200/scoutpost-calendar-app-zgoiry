@@ -64,11 +64,19 @@ export const commonStyles = StyleSheet.create({
     color: colors.text,
     marginBottom: 10
   },
+  sectionTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    fontFamily: 'Sansita_700Bold',
+    color: colors.primary,
+    textAlign: 'center',
+    marginBottom: 10
+  },
   subtitle: {
     fontSize: 24,
     fontWeight: '600',
     fontFamily: 'Sansita_700Bold',
-    color: colors.text,
+    color: colors.primary,
     marginBottom: 8,
     textAlign: 'center',
   },
@@ -78,6 +86,20 @@ export const commonStyles = StyleSheet.create({
     color: colors.text,
     marginBottom: 8,
     lineHeight: 24,
+  },
+  textMedium: {
+    fontSize: 16,
+    fontWeight: '400',
+    color: colors.text,
+    marginBottom: 8,
+    lineHeight: 24,
+  },
+  textLarge: {
+    fontSize: 18,
+    fontWeight: '500',
+    color: colors.text,
+    marginBottom: 8,
+    lineHeight: 26,
   },
   textSecondary: {
     fontSize: 14,

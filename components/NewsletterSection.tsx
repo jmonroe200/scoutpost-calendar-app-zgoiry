@@ -150,15 +150,8 @@ export default function NewsletterSection() {
 
   return (
     <View style={[commonStyles.container, { paddingTop: 0 }]}>
-      {/* Header with centered title */}
-      <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 }}>
-        <Text style={[commonStyles.title, { textAlign: 'center', marginBottom: 16 }]}>
-          Newsletter
-        </Text>
-      </View>
-
       <ScrollView 
-        style={{ flex: 1, paddingHorizontal: 16 }}
+        style={{ flex: 1, paddingHorizontal: 16, paddingTop: 16 }}
         showsVerticalScrollIndicator={false}
       >
         {loading ? (

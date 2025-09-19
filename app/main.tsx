@@ -43,6 +43,21 @@ export default function MainScreen() {
     return () => subscription.unsubscribe();
   }, []);
 
+  const getSectionTitle = () => {
+    switch (activeTab) {
+      case 'calendar':
+        return 'Calendar';
+      case 'social':
+        return 'Community Feed';
+      case 'newsletter':
+        return 'Newsletter';
+      case 'profile':
+        return 'Profile';
+      default:
+        return 'Calendar';
+    }
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case 'calendar':
@@ -104,13 +119,15 @@ export default function MainScreen() {
 
   return (
     <SafeAreaView style={commonStyles.container}>
-      {/* Header */}
+      {/* Header with Dynamic Section Title */}
       <View style={[{ padding: 20, paddingBottom: 10, alignItems: 'center', justifyContent: 'center' }]}>
         <Text style={[commonStyles.title, { 
           fontFamily: 'Sansita_700Bold',
-          color: colors.primary 
+          color: colors.primary,
+          fontSize: 28,
+          textAlign: 'center'
         }]}>
-          Scoutpost
+          {getSectionTitle()}
         </Text>
       </View>
 
