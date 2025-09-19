@@ -1,8 +1,7 @@
-
 {
   "expo": {
-    "name": "Natively",
-    "slug": "Natively",
+    "name": "scoutpost-calendar-app-zgoiry",
+    "slug": "scoutpost-calendar-app-zgoiry",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/natively-dark.png",
@@ -26,7 +25,7 @@
         "backgroundColor": "#000000"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.anonymous.Natively"
+      "package": "com.scoutpost.app"
     },
     "web": {
       "favicon": "./assets/images/final_quest_240x240.png",

@@ -149,7 +149,8 @@ export default function SettingsScreen({ onClose }: SettingsScreenProps) {
     description, 
     onPress, 
     color = colors.text,
-    destructive = false 
+    destructive = false,
+    disabled = false
   }: {
     icon: string;
     title: string;
@@ -157,10 +158,16 @@ export default function SettingsScreen({ onClose }: SettingsScreenProps) {
     onPress: () => void;
     color?: string;
     destructive?: boolean;
+    disabled?: boolean;
   }) => (
     <TouchableOpacity
-      style={[commonStyles.card, commonStyles.row]}
+      style={[
+        commonStyles.card, 
+        commonStyles.row,
+        disabled && { opacity: 0.5 }
+      ]}
       onPress={onPress}
+      disabled={disabled}
     >
       <View style={commonStyles.centerRow}>
         <View style={{
@@ -174,7 +181,7 @@ export default function SettingsScreen({ onClose }: SettingsScreenProps) {
         <View style={{ flex: 1 }}>
           <Text style={[commonStyles.text, { 
             marginBottom: description ? 4 : 0,
-            color: destructive ? colors.error : colors.text 
+            color: destructive ? colors.error : (disabled ? colors.textSecondary : colors.text)
           }]}>
             {title}
           </Text>
@@ -218,9 +225,10 @@ export default function SettingsScreen({ onClose }: SettingsScreenProps) {
           <ActionItem
             icon="logo-github"
             title="GitHub Integration"
-            description="Connect your GitHub account for enhanced features"
+            description="Connect your GitHub account (coming soon)"
             onPress={() => setShowGitHubIntegration(true)}
             color="#24292e"
+            disabled={false}
           />
 
           {/* Notifications */}

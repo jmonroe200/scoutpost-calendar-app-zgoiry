@@ -1,5 +1,6 @@
 
-import { supabase } from './supabase';
+// GitHub integration placeholder
+// This service will be implemented in a future update
 
 export interface GitHubUser {
   id: number;
@@ -26,84 +27,27 @@ export interface GitHubRepo {
 }
 
 export class GitHubService {
-  private static async callEdgeFunction(action: string): Promise<any> {
-    try {
-      console.log(`Calling GitHub Edge Function with action: ${action}`);
-      
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error('No active session');
-      }
-
-      const { data, error } = await supabase.functions.invoke('github-integration', {
-        body: { action },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
-
-      if (error) {
-        console.error('Edge function error:', error);
-        throw error;
-      }
-
-      if (!data.success) {
-        throw new Error(data.message || 'GitHub API call failed');
-      }
-
-      return data.data;
-    } catch (error) {
-      console.error(`GitHub ${action} error:`, error);
-      throw error;
-    }
-  }
-
   static async getUser(): Promise<GitHubUser> {
-    return await this.callEdgeFunction('user');
+    throw new Error('GitHub integration is not yet implemented');
   }
 
   static async getRepositories(): Promise<GitHubRepo[]> {
-    return await this.callEdgeFunction('repos');
+    throw new Error('GitHub integration is not yet implemented');
   }
 
   static async testConnection(): Promise<any> {
-    return await this.callEdgeFunction('test');
+    throw new Error('GitHub integration is not yet implemented');
   }
 
   static async checkConnection(): Promise<boolean> {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return false;
-
-      const { data: identities } = await supabase.auth.getUserIdentities();
-      return identities?.identities?.some(identity => identity.provider === 'github') || false;
-    } catch (error) {
-      console.error('Error checking GitHub connection:', error);
-      return false;
-    }
+    return false;
   }
 
   static async connectWithOAuth(): Promise<{ url?: string; error?: any }> {
-    try {
-      console.log('Initiating GitHub OAuth connection');
-      
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'github',
-        options: {
-          redirectTo: 'https://natively.dev/email-confirmed',
-          scopes: 'read:user user:email public_repo'
-        }
-      });
-
-      if (error) {
-        console.error('GitHub OAuth error:', error);
-        return { error };
-      }
-
-      return { url: data.url };
-    } catch (error) {
-      console.error('Unexpected error connecting to GitHub:', error);
-      return { error };
-    }
+    return { 
+      error: { 
+        message: 'GitHub integration is not yet implemented' 
+      } 
+    };
   }
 }
