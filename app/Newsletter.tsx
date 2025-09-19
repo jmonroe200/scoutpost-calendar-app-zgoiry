@@ -389,7 +389,7 @@ This week we had an amazing **camping trip**!
               onPress={() => handleSaveNewsletter('draft')}
             >
               <Text style={[commonStyles.buttonText, { color: colors.backgroundAlt }]}>
-                Save as Draft
+                Save Draft
               </Text>
             </TouchableOpacity>
             
@@ -398,7 +398,7 @@ This week we had an amazing **camping trip**!
               onPress={() => handleSaveNewsletter('published')}
             >
               <Text style={commonStyles.buttonText}>
-                Publish Newsletter
+                Publish
               </Text>
             </TouchableOpacity>
           </View>
