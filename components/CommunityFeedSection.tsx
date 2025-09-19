@@ -154,6 +154,13 @@ export default function CommunityFeedSection() {
     }
   };
 
+  const isNewPost = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    return diffInHours < 24; // Consider posts within 24 hours as "new"
+  };
+
   const handleLike = async (postId: string) => {
     if (!currentUser) {
       Alert.alert('Error', 'You must be logged in to like posts');
@@ -307,9 +314,49 @@ export default function CommunityFeedSection() {
   const PostCard = ({ post }: { post: Post }) => {
     const postComments = comments.filter(c => c.post_id === post.id);
     const canDelete = currentUser && currentUser.id === post.author_id;
+    const isNew = isNewPost(post.created_at);
+
+    // Style for new posts: white background and larger text
+    const cardStyle = isNew ? {
+      ...commonStyles.card,
+      backgroundColor: '#FFFFFF',
+      borderWidth: 2,
+      borderColor: colors.primary,
+      boxShadow: '0px 4px 12px rgba(46, 125, 50, 0.15)',
+      elevation: 5,
+    } : commonStyles.card;
+
+    const contentTextStyle = isNew ? {
+      fontSize: 20,
+      fontWeight: '500',
+      color: colors.text,
+      marginBottom: 12,
+      lineHeight: 28,
+    } : [commonStyles.text, { marginBottom: 12 }];
 
     return (
-      <View style={commonStyles.card}>
+      <View style={cardStyle}>
+        {isNew && (
+          <View style={{
+            position: 'absolute',
+            top: -1,
+            right: 12,
+            backgroundColor: colors.primary,
+            paddingHorizontal: 8,
+            paddingVertical: 4,
+            borderRadius: 12,
+            zIndex: 1,
+          }}>
+            <Text style={{
+              color: colors.backgroundAlt,
+              fontSize: 12,
+              fontWeight: '600',
+            }}>
+              NEW
+            </Text>
+          </View>
+        )}
+
         <View style={[commonStyles.row, { marginBottom: 12 }]}>
           <View style={commonStyles.centerRow}>
             <View style={{
@@ -346,7 +393,7 @@ export default function CommunityFeedSection() {
           )}
         </View>
 
-        <Text style={[commonStyles.text, { marginBottom: 12 }]}>
+        <Text style={contentTextStyle}>
           {post.content}
         </Text>
 
