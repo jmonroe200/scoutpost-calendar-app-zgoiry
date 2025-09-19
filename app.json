@@ -1,3 +1,4 @@
+
 {
   "expo": {
     "name": "Natively",
@@ -8,9 +9,9 @@
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/images/natively-dark.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#000000"
+      "image": "./assets/images/90309ce8-6fcd-4b67-b1a3-aec5462b6edc.png",
+      "resizeMode": "cover",
+      "backgroundColor": "#FF3333"
     },
     "ios": {
       "supportsTablet": true,
