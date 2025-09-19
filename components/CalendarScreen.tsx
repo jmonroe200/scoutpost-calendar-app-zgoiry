@@ -84,6 +84,14 @@ export default function CalendarScreen() {
     }
   };
 
+  // Get today's date in YYYY-MM-DD format
+  const getTodayString = () => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  };
+
+  const todayString = getTodayString();
+
   const markedDates = events.reduce((acc, event) => {
     acc[event.date] = {
       marked: true,
@@ -91,6 +99,42 @@ export default function CalendarScreen() {
     };
     return acc;
   }, {} as any);
+
+  // Add today's date with green circle highlighting
+  if (markedDates[todayString]) {
+    // If today already has events, combine the styling
+    markedDates[todayString] = {
+      ...markedDates[todayString],
+      customStyles: {
+        container: {
+          backgroundColor: colors.success,
+          borderRadius: 20,
+          borderWidth: 2,
+          borderColor: colors.success,
+        },
+        text: {
+          color: colors.backgroundAlt,
+          fontWeight: 'bold',
+        },
+      },
+    };
+  } else {
+    // If today has no events, just add the green circle
+    markedDates[todayString] = {
+      customStyles: {
+        container: {
+          backgroundColor: colors.success,
+          borderRadius: 20,
+          borderWidth: 2,
+          borderColor: colors.success,
+        },
+        text: {
+          color: colors.backgroundAlt,
+          fontWeight: 'bold',
+        },
+      },
+    };
+  }
 
   if (selectedDate) {
     markedDates[selectedDate] = {
@@ -201,6 +245,7 @@ export default function CalendarScreen() {
                 setSelectedDate(day.dateString);
               }}
               markedDates={markedDates}
+              markingType={'custom'}
               theme={{
                 backgroundColor: colors.backgroundAlt,
                 calendarBackground: colors.backgroundAlt,
