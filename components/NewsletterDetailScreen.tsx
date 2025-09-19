@@ -31,17 +31,17 @@ export default function NewsletterDetailScreen({ newsletter, isVisible, onClose 
     return lines.map((line, lineIndex) => {
       // Skip empty lines
       if (!line.trim()) {
-        return <View key={lineIndex} style={{ height: 12 }} />;
+        return <View key={lineIndex} style={{ height: 16 }} />;
       }
 
-      // Handle headings
+      // Handle headings - Made larger
       if (line.startsWith('# ')) {
         return (
           <Text key={lineIndex} style={[commonStyles.text, { 
-            fontSize: 22, 
+            fontSize: 28, 
             fontWeight: 'bold', 
-            marginBottom: 16,
-            marginTop: lineIndex > 0 ? 8 : 0,
+            marginBottom: 20,
+            marginTop: lineIndex > 0 ? 12 : 0,
             color: colors.primary 
           }]}>
             {line.substring(2)}
@@ -49,23 +49,24 @@ export default function NewsletterDetailScreen({ newsletter, isVisible, onClose 
         );
       }
 
-      // Handle bullet points
+      // Handle bullet points - Made larger
       if (line.startsWith('• ')) {
         return (
-          <View key={lineIndex} style={{ flexDirection: 'row', marginBottom: 12, paddingLeft: 8 }}>
-            <Text style={[commonStyles.text, { marginRight: 12, color: colors.primary }]}>•</Text>
-            <Text style={[commonStyles.text, { flex: 1, lineHeight: 24 }]}>
+          <View key={lineIndex} style={{ flexDirection: 'row', marginBottom: 16 }}>
+            <Text style={[commonStyles.text, { marginRight: 16, color: colors.primary, fontSize: 20 }]}>•</Text>
+            <Text style={[commonStyles.text, { flex: 1, lineHeight: 28, fontSize: 18 }]}>
               {renderInlineStyles(line.substring(2))}
             </Text>
           </View>
         );
       }
 
-      // Handle regular paragraphs with inline styles
+      // Handle regular paragraphs with inline styles - Made larger
       return (
         <Text key={lineIndex} style={[commonStyles.text, { 
-          marginBottom: 16,
-          lineHeight: 24 
+          marginBottom: 20,
+          lineHeight: 28,
+          fontSize: 18
         }]}>
           {renderInlineStyles(line)}
         </Text>
@@ -177,10 +178,9 @@ export default function NewsletterDetailScreen({ newsletter, isVisible, onClose 
           
           <View style={{ flex: 1 }}>
             <View style={[commonStyles.row, { marginBottom: 4 }]}>
-              <Icon name="mail" size={16} color={colors.primary} />
               <Text style={[
                 commonStyles.textSecondary,
-                { marginLeft: 6, fontSize: 12, fontWeight: '600' }
+                { fontSize: 12, fontWeight: '600' }
               ]}>
                 NEWSLETTER
               </Text>
@@ -191,32 +191,31 @@ export default function NewsletterDetailScreen({ newsletter, isVisible, onClose 
           </View>
         </View>
 
-        {/* Content */}
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20 }}>
+        {/* Content - Removed margins and made text larger */}
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 20 }}>
           {/* Newsletter Header */}
-          <View style={[
-            commonStyles.card,
-            {
-              backgroundColor: colors.backgroundAlt,
-              borderLeftWidth: 4,
-              borderLeftColor: colors.primary,
-              marginBottom: 24,
-            }
-          ]}>
-            <Text style={[commonStyles.title, { textAlign: 'left', marginBottom: 12 }]}>
+          <View style={{
+            backgroundColor: colors.backgroundAlt,
+            borderLeftWidth: 4,
+            borderLeftColor: colors.primary,
+            marginBottom: 24,
+            paddingHorizontal: 20,
+            paddingVertical: 20,
+          }}>
+            <Text style={[commonStyles.title, { textAlign: 'left', marginBottom: 16, fontSize: 24 }]}>
               {newsletter.title}
             </Text>
             
-            <View style={[commonStyles.row, { marginBottom: 8 }]}>
-              <Icon name="person" size={16} color={colors.textSecondary} />
-              <Text style={[commonStyles.textSecondary, { marginLeft: 6 }]}>
+            <View style={[commonStyles.row, { marginBottom: 12 }]}>
+              <Icon name="person" size={18} color={colors.textSecondary} />
+              <Text style={[commonStyles.textSecondary, { marginLeft: 8, fontSize: 16 }]}>
                 By {newsletter.author_name}
               </Text>
             </View>
             
             <View style={commonStyles.row}>
-              <Icon name="calendar" size={16} color={colors.textSecondary} />
-              <Text style={[commonStyles.textSecondary, { marginLeft: 6 }]}>
+              <Icon name="calendar" size={18} color={colors.textSecondary} />
+              <Text style={[commonStyles.textSecondary, { marginLeft: 8, fontSize: 16 }]}>
                 {newsletter.published_at 
                   ? formatDate(newsletter.published_at) 
                   : formatDate(newsletter.created_at)
@@ -225,22 +224,21 @@ export default function NewsletterDetailScreen({ newsletter, isVisible, onClose 
             </View>
           </View>
 
-          {/* Newsletter Content with Styling */}
-          <View style={[commonStyles.card, { padding: 20 }]}>
+          {/* Newsletter Content with Styling - Removed margins */}
+          <View style={{ paddingHorizontal: 20 }}>
             {renderStyledContent(newsletter.content)}
           </View>
 
           {/* Footer */}
-          <View style={[
-            commonStyles.card,
-            {
-              backgroundColor: colors.backgroundAlt,
-              marginTop: 24,
-              alignItems: 'center',
-            }
-          ]}>
-            <Icon name="mail-outline" size={24} color={colors.primary} style={{ marginBottom: 8 }} />
-            <Text style={[commonStyles.textSecondary, { textAlign: 'center', fontSize: 12 }]}>
+          <View style={{
+            backgroundColor: colors.backgroundAlt,
+            marginTop: 32,
+            alignItems: 'center',
+            paddingHorizontal: 20,
+            paddingVertical: 20,
+          }}>
+            <Icon name="mail-outline" size={28} color={colors.primary} style={{ marginBottom: 12 }} />
+            <Text style={[commonStyles.textSecondary, { textAlign: 'center', fontSize: 14 }]}>
               This newsletter was published on{' '}
               {newsletter.published_at 
                 ? new Date(newsletter.published_at).toLocaleDateString('en-US', { 

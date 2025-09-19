@@ -50,7 +50,7 @@ export default function MainScreen() {
       case 'social':
         return 'Community Feed';
       case 'newsletter':
-        return 'Newsletter';
+        return 'Newsletters';
       case 'profile':
         return 'Profile';
       default:
@@ -148,7 +148,7 @@ export default function MainScreen() {
       ]}>
         <TabButton tab="calendar" icon="calendar" label="Calendar" />
         <TabButton tab="social" icon="chatbubbles" label="Community" />
-        <TabButton tab="newsletter" icon="mail" label="Newsletter" />
+        <TabButton tab="newsletter" icon="mail" label="Newsletters" />
         <TabButton tab="profile" icon="person" label="Profile" />
       </View>
     </SafeAreaView>

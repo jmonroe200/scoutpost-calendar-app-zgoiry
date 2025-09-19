@@ -177,10 +177,9 @@ export default function NewsletterSection() {
       onPress={() => setSelectedNewsletter(newsletter)}
       activeOpacity={0.7}
     >
-      {/* Header */}
+      {/* Header - Removed envelope icon */}
       <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-        <Icon name="mail" size={20} color={colors.primary} />
-        <View style={{ flex: 1, marginLeft: 8 }}>
+        <View style={{ flex: 1 }}>
           <Text style={[commonStyles.text, { 
             fontWeight: '600',
             color: colors.text,
@@ -268,14 +267,6 @@ export default function NewsletterSection() {
         ) : newsletters.length > 0 ? (
           <>
             <View style={{ marginBottom: 20 }}>
-              <Text style={[commonStyles.text, { 
-                fontWeight: '600', 
-                marginBottom: 16,
-                color: colors.text,
-                fontSize: 18
-              }]}>
-                All Newsletters
-              </Text>
               <Text style={[commonStyles.textSecondary, { 
                 marginBottom: 20,
                 textAlign: 'center'
