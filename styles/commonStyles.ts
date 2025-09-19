@@ -67,6 +67,7 @@ export const commonStyles = StyleSheet.create({
   subtitle: {
     fontSize: 24,
     fontWeight: '600',
+    fontFamily: 'Sansita_700Bold',
     color: colors.text,
     marginBottom: 8,
   },
