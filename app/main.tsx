@@ -101,20 +101,13 @@ export default function MainScreen() {
   return (
     <SafeAreaView style={commonStyles.container}>
       {/* Header */}
-      <View style={[commonStyles.row, { padding: 20, paddingBottom: 10 }]}>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Image 
-            source={require('../assets/images/006a9a79-1c40-4999-ba26-8d0a58a09b1d.jpeg')}
-            style={{ width: 24, height: 24, marginRight: 8 }}
-            resizeMode="contain"
-          />
-          <Text style={[commonStyles.title, { 
-            fontFamily: 'Sansita_700Bold',
-            color: colors.primary 
-          }]}>
-            Scoutpost
-          </Text>
-        </View>
+      <View style={[{ padding: 20, paddingBottom: 10, alignItems: 'center', justifyContent: 'center' }]}>
+        <Text style={[commonStyles.title, { 
+          fontFamily: 'Sansita_700Bold',
+          color: colors.primary 
+        }]}>
+          Scoutpost
+        </Text>
       </View>
 
       {/* Content */}
