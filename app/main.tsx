@@ -7,10 +7,11 @@ import Icon from '../components/Icon';
 import CalendarScreen from '../components/CalendarScreen';
 import SocialScreen from '../components/SocialScreen';
 import ProfileScreen from '../components/ProfileScreen';
+import NewsletterSection from '../components/NewsletterSection';
 import { supabase } from '../lib/supabase';
 import { router } from 'expo-router';
 
-type TabType = 'calendar' | 'social' | 'profile';
+type TabType = 'calendar' | 'social' | 'newsletter' | 'profile';
 
 export default function MainScreen() {
   const [activeTab, setActiveTab] = useState<TabType>('calendar');
@@ -48,6 +49,8 @@ export default function MainScreen() {
         return <CalendarScreen />;
       case 'social':
         return <SocialScreen />;
+      case 'newsletter':
+        return <NewsletterSection />;
       case 'profile':
         return <ProfileScreen />;
       default:
@@ -64,7 +67,7 @@ export default function MainScreen() {
           paddingVertical: 12,
           backgroundColor: activeTab === tab ? colors.primary + '20' : 'transparent',
           borderRadius: 12,
-          marginHorizontal: 4,
+          marginHorizontal: 2,
           alignItems: 'center',
           justifyContent: 'center',
         }
@@ -73,7 +76,7 @@ export default function MainScreen() {
     >
       <Icon 
         name={icon as any} 
-        size={24} 
+        size={22} 
         color={activeTab === tab ? colors.primary : colors.text} 
       />
       <Text style={[
@@ -83,6 +86,7 @@ export default function MainScreen() {
           color: activeTab === tab ? colors.primary : colors.text,
           fontWeight: activeTab === tab ? '600' : '400',
           textAlign: 'center',
+          fontSize: 11,
         }
       ]}>
         {label}
@@ -119,7 +123,7 @@ export default function MainScreen() {
       <View style={[
         commonStyles.row, 
         { 
-          padding: 16,
+          padding: 12,
           backgroundColor: colors.backgroundAlt,
           borderTopWidth: 1,
           borderTopColor: colors.border,
@@ -127,6 +131,7 @@ export default function MainScreen() {
       ]}>
         <TabButton tab="calendar" icon="calendar" label="Calendar" />
         <TabButton tab="social" icon="chatbubbles" label="Community" />
+        <TabButton tab="newsletter" icon="mail" label="Newsletter" />
         <TabButton tab="profile" icon="person" label="Profile" />
       </View>
     </SafeAreaView>
