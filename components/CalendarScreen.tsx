@@ -186,31 +186,41 @@ export default function CalendarScreen() {
     <View style={{ flex: 1 }}>
       <ScrollView style={{ flex: 1 }}>
         <View style={commonStyles.section}>
-          <Calendar
-            onDayPress={(day) => {
-              console.log('Selected date:', day.dateString);
-              setSelectedDate(day.dateString);
-            }}
-            markedDates={markedDates}
-            theme={{
-              backgroundColor: colors.backgroundAlt,
-              calendarBackground: colors.backgroundAlt,
-              textSectionTitleColor: colors.text,
-              selectedDayBackgroundColor: colors.primary,
-              selectedDayTextColor: colors.backgroundAlt,
-              todayTextColor: colors.primary,
-              dayTextColor: colors.text,
-              textDisabledColor: colors.textSecondary,
-              dotColor: colors.primary,
-              selectedDotColor: colors.backgroundAlt,
-              arrowColor: colors.primary,
-              monthTextColor: colors.text,
-              indicatorColor: colors.primary,
-              textDayFontWeight: '400',
-              textMonthFontWeight: '600',
-              textDayHeaderFontWeight: '600',
-            }}
-          />
+          <View style={{
+            backgroundColor: colors.backgroundAlt,
+            borderColor: colors.border,
+            borderWidth: 1,
+            borderRadius: 12,
+            overflow: 'hidden',
+            boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
+            elevation: 3,
+          }}>
+            <Calendar
+              onDayPress={(day) => {
+                console.log('Selected date:', day.dateString);
+                setSelectedDate(day.dateString);
+              }}
+              markedDates={markedDates}
+              theme={{
+                backgroundColor: colors.backgroundAlt,
+                calendarBackground: colors.backgroundAlt,
+                textSectionTitleColor: colors.text,
+                selectedDayBackgroundColor: colors.primary,
+                selectedDayTextColor: colors.backgroundAlt,
+                todayTextColor: colors.primary,
+                dayTextColor: colors.text,
+                textDisabledColor: colors.textSecondary,
+                dotColor: colors.primary,
+                selectedDotColor: colors.backgroundAlt,
+                arrowColor: colors.primary,
+                monthTextColor: colors.text,
+                indicatorColor: colors.primary,
+                textDayFontWeight: '400',
+                textMonthFontWeight: '600',
+                textDayHeaderFontWeight: '600',
+              }}
+            />
+          </View>
         </View>
 
         {selectedDate && (
