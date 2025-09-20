@@ -452,11 +452,16 @@ export default function CommunityFeedSection() {
 
   return (
     <View style={{ flex: 1 }}>
-      {/* Centered Round New Post Button */}
+      {/* Centered Round New Post Button with Label */}
       <View style={{ alignItems: 'center', marginBottom: 20 }}>
         <TouchableOpacity
           onPress={() => setShowCreatePost(true)}
           style={{
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <View style={{
             width: 60,
             height: 60,
             borderRadius: 30,
@@ -465,24 +470,32 @@ export default function CommunityFeedSection() {
             justifyContent: 'center',
             boxShadow: '0px 4px 12px rgba(46, 125, 50, 0.3)',
             elevation: 6,
-          }}
-        >
-          <View style={{ position: 'relative' }}>
-            <Icon name="create" size={24} color={colors.backgroundAlt} />
-            <View style={{
-              position: 'absolute',
-              top: -2,
-              right: -2,
-              width: 12,
-              height: 12,
-              borderRadius: 6,
-              backgroundColor: colors.backgroundAlt,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-              <Icon name="add" size={8} color={colors.primary} />
+            marginBottom: 8,
+          }}>
+            <View style={{ position: 'relative' }}>
+              <Icon name="create" size={24} color={colors.backgroundAlt} />
+              <View style={{
+                position: 'absolute',
+                top: -2,
+                right: -2,
+                width: 12,
+                height: 12,
+                borderRadius: 6,
+                backgroundColor: colors.backgroundAlt,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                <Icon name="add" size={8} color={colors.primary} />
+              </View>
             </View>
           </View>
+          <Text style={[commonStyles.text, { 
+            fontWeight: '600', 
+            color: colors.primary,
+            fontSize: 16,
+          }]}>
+            New Post
+          </Text>
         </TouchableOpacity>
       </View>
 
