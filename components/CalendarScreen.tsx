@@ -90,6 +90,13 @@ export default function CalendarScreen() {
     return today.toISOString().split('T')[0];
   };
 
+  // Format date string properly without timezone issues
+  const formatDateString = (dateString: string) => {
+    const [year, month, day] = dateString.split('-');
+    const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    return date.toLocaleDateString();
+  };
+
   const todayString = getTodayString();
 
   const markedDates = events.reduce((acc, event) => {
@@ -272,7 +279,7 @@ export default function CalendarScreen() {
           <View style={commonStyles.section}>
             <View style={commonStyles.row}>
               <Text style={commonStyles.subtitle}>
-                Events for {new Date(selectedDate).toLocaleDateString()}
+                Events for {formatDateString(selectedDate)}
               </Text>
               <TouchableOpacity
                 onPress={() => setShowAddEvent(true)}
@@ -382,7 +389,7 @@ export default function CalendarScreen() {
                           </Text>
                         </View>
                         <Text style={[commonStyles.textSecondary, { marginBottom: 4 }]}>
-                          {new Date(event.date).toLocaleDateString()} • {event.time}
+                          {formatDateString(event.date)} • {event.time}
                         </Text>
                         <Text style={commonStyles.text}>
                           {event.location}
