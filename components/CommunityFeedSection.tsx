@@ -452,7 +452,7 @@ export default function CommunityFeedSection() {
 
   return (
     <View style={{ flex: 1 }}>
-      {/* Centered Round New Post Button */}
+      {/* Centered Round New Post Button with Adobe Asset */}
       <View style={{ alignItems: 'center', marginBottom: 20 }}>
         <TouchableOpacity
           onPress={() => setShowCreatePost(true)}
@@ -467,22 +467,15 @@ export default function CommunityFeedSection() {
             elevation: 6,
           }}
         >
-          <View style={{ position: 'relative' }}>
-            <Icon name="create" size={24} color={colors.backgroundAlt} />
-            <View style={{
-              position: 'absolute',
-              top: -2,
-              right: -2,
-              width: 12,
-              height: 12,
-              borderRadius: 6,
-              backgroundColor: colors.backgroundAlt,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-              <Icon name="add" size={8} color={colors.primary} />
-            </View>
-          </View>
+          <Image
+            source={{ uri: 'https://assets.adobe.com/id/urn:aaid:sc:US:5211f370-3b76-4574-8bdc-9899e22dd324?view=published' }}
+            style={{
+              width: 32,
+              height: 32,
+              tintColor: colors.backgroundAlt,
+            }}
+            resizeMode="contain"
+          />
         </TouchableOpacity>
       </View>
 
