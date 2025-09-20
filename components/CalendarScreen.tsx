@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert, Image } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import { commonStyles, colors } from '../styles/commonStyles';
 import Icon from './Icon';
@@ -100,38 +100,36 @@ export default function CalendarScreen() {
     return acc;
   }, {} as any);
 
-  // Add today's date with Adobe asset highlighting instead of green circle
+  // Add today's date with green circle highlighting
   if (markedDates[todayString]) {
     // If today already has events, combine the styling
     markedDates[todayString] = {
       ...markedDates[todayString],
       customStyles: {
         container: {
-          backgroundColor: 'transparent',
+          backgroundColor: colors.success,
           borderRadius: 20,
           borderWidth: 2,
           borderColor: colors.success,
-          position: 'relative',
         },
         text: {
-          color: colors.success,
+          color: colors.backgroundAlt,
           fontWeight: 'bold',
         },
       },
     };
   } else {
-    // If today has no events, just add the Adobe asset styling
+    // If today has no events, just add the green circle
     markedDates[todayString] = {
       customStyles: {
         container: {
-          backgroundColor: 'transparent',
+          backgroundColor: colors.success,
           borderRadius: 20,
           borderWidth: 2,
           borderColor: colors.success,
-          position: 'relative',
         },
         text: {
-          color: colors.success,
+          color: colors.backgroundAlt,
           fontWeight: 'bold',
         },
       },
@@ -268,29 +266,6 @@ export default function CalendarScreen() {
               }}
             />
           </View>
-
-          {/* Adobe Asset overlay for today's date */}
-          <View style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            pointerEvents: 'none',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
-            <Image
-              source={{ uri: 'https://assets.adobe.com/id/urn:aaid:sc:US:5211f370-3b76-4574-8bdc-9899e22dd324?view=published' }}
-              style={{
-                width: 30,
-                height: 30,
-                tintColor: colors.success,
-                opacity: 0.7,
-              }}
-              resizeMode="contain"
-            />
-          </View>
         </View>
 
         {selectedDate && (
@@ -316,7 +291,7 @@ export default function CalendarScreen() {
 
             {selectedDateEvents.length === 0 ? (
               <View style={[commonStyles.card, { alignItems: 'center', paddingVertical: 32 }]}>
-                <Icon name="calendar-outline" size={48} color={colors.textSecondary} useAdobeAsset={true} />
+                <Icon name="calendar-outline" size={48} color={colors.textSecondary} />
                 <Text style={[commonStyles.textSecondary, { marginTop: 12, textAlign: 'center' }]}>
                   No events scheduled for this date
                 </Text>
@@ -377,7 +352,7 @@ export default function CalendarScreen() {
             <Text style={commonStyles.subtitle}>Upcoming Events</Text>
             {events.length === 0 ? (
               <View style={[commonStyles.card, { alignItems: 'center', paddingVertical: 40 }]}>
-                <Icon name="calendar" size={48} color={colors.textSecondary} useAdobeAsset={true} />
+                <Icon name="calendar" size={48} color={colors.textSecondary} />
                 <Text style={[commonStyles.text, { marginTop: 16, textAlign: 'center' }]}>
                   No events scheduled
                 </Text>
