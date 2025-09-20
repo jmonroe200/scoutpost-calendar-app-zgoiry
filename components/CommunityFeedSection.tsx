@@ -452,7 +452,7 @@ export default function CommunityFeedSection() {
 
   return (
     <View style={{ flex: 1 }}>
-      {/* Centered Round New Post Button with Label */}
+      {/* Centered Round New Post Button with Bold Plus Sign */}
       <View style={{ alignItems: 'center', marginBottom: 20 }}>
         <TouchableOpacity
           onPress={() => setShowCreatePost(true)}
@@ -472,22 +472,7 @@ export default function CommunityFeedSection() {
             elevation: 6,
             marginBottom: 8,
           }}>
-            <View style={{ position: 'relative' }}>
-              <Icon name="create" size={24} color={colors.backgroundAlt} />
-              <View style={{
-                position: 'absolute',
-                top: -2,
-                right: -2,
-                width: 12,
-                height: 12,
-                borderRadius: 6,
-                backgroundColor: colors.backgroundAlt,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}>
-                <Icon name="add" size={8} color={colors.primary} />
-              </View>
-            </View>
+            <Icon name="add" size={32} color={colors.backgroundAlt} />
           </View>
           <Text style={[commonStyles.text, { 
             fontWeight: '600', 
