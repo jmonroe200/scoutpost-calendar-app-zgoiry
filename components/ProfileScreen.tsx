@@ -8,12 +8,13 @@ import SimpleBottomSheet from './BottomSheet';
 import EditProfileScreen from './EditProfileScreen';
 import SettingsScreen from './SettingsScreen';
 import AdminDashboard from './AdminDashboard';
-import { supabase } from '../lib/supabase';
+import { supabase, signOut } from '../lib/supabase';
 import { UserProfile } from '../lib/types';
 
 export default function ProfileScreen() {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loggingOut, setLoggingOut] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -102,14 +103,46 @@ export default function ProfileScreen() {
         {
           text: 'Logout',
           style: 'destructive',
-          onPress: async () => {
-            console.log('User logging out');
-            await supabase.auth.signOut();
-            router.replace('/');
-          }
+          onPress: performLogout
         }
       ]
     );
+  };
+
+  const performLogout = async () => {
+    try {
+      setLoggingOut(true);
+      console.log('User logging out...');
+      
+      await signOut();
+      
+      console.log('Logout successful, redirecting to login...');
+      // The auth state listener in main.tsx will handle the redirect automatically
+      // But we can also manually redirect as a fallback
+      setTimeout(() => {
+        router.replace('/');
+      }, 100);
+      
+    } catch (error: any) {
+      console.error('Error during logout:', error);
+      Alert.alert(
+        'Logout Error', 
+        error.message || 'Failed to logout. Please try again.',
+        [
+          { text: 'OK' },
+          { 
+            text: 'Force Logout', 
+            style: 'destructive',
+            onPress: () => {
+              // Force redirect even if logout failed
+              router.replace('/');
+            }
+          }
+        ]
+      );
+    } finally {
+      setLoggingOut(false);
+    }
   };
 
   const handleSaveProfile = async (updatedProfile: UserProfile) => {
@@ -174,15 +207,21 @@ export default function ProfileScreen() {
     </View>
   );
 
-  const MenuButton = ({ icon, label, onPress, color = colors.text }: { 
+  const MenuButton = ({ icon, label, onPress, color = colors.text, disabled = false }: { 
     icon: string; 
     label: string; 
     onPress: () => void;
     color?: string;
+    disabled?: boolean;
   }) => (
     <TouchableOpacity
-      style={[commonStyles.card, commonStyles.row]}
+      style={[
+        commonStyles.card, 
+        commonStyles.row,
+        disabled && { opacity: 0.5 }
+      ]}
       onPress={onPress}
+      disabled={disabled}
     >
       <View style={commonStyles.centerRow}>
         <Icon name={icon as any} size={24} color={color} />
@@ -190,7 +229,7 @@ export default function ProfileScreen() {
           {label}
         </Text>
       </View>
-      <Icon name="chevron-forward" size={20} color={colors.textSecondary} />
+      {!disabled && <Icon name="chevron-forward" size={20} color={colors.textSecondary} />}
     </TouchableOpacity>
   );
 
@@ -441,9 +480,10 @@ export default function ProfileScreen() {
 
         <MenuButton
           icon="log-out"
-          label="Logout"
+          label={loggingOut ? "Logging out..." : "Logout"}
           onPress={handleLogout}
           color={colors.error}
+          disabled={loggingOut}
         />
 
         {/* App Info with Red Tent Icon */}

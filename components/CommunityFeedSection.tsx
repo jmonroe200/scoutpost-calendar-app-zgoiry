@@ -34,6 +34,7 @@ export default function CommunityFeedSection() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [userProfile, setUserProfile] = useState<any>(null);
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [newComment, setNewComment] = useState('');
@@ -47,6 +48,15 @@ export default function CommunityFeedSection() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       setCurrentUser(user);
+      
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+        setUserProfile(profile);
+      }
       
       await Promise.all([
         loadPosts(),
@@ -115,7 +125,7 @@ export default function CommunityFeedSection() {
 
               if (error) {
                 console.error('Error deleting post:', error);
-                Alert.alert('Error', 'Failed to delete post');
+                Alert.alert('Error', 'Failed to delete post. Please try again.');
                 return;
               }
 
@@ -124,7 +134,55 @@ export default function CommunityFeedSection() {
               await loadPosts();
             } catch (error) {
               console.error('Unexpected error deleting post:', error);
-              Alert.alert('Error', 'Failed to delete post');
+              Alert.alert('Error', 'Failed to delete post. Please try again.');
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleDeleteComment = (comment: Comment) => {
+    Alert.alert(
+      'Delete Comment',
+      'Are you sure you want to delete this comment?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const { error } = await supabase
+                .from('comments')
+                .delete()
+                .eq('id', comment.id);
+
+              if (error) {
+                console.error('Error deleting comment:', error);
+                Alert.alert('Error', 'Failed to delete comment. Please try again.');
+                return;
+              }
+
+              console.log('Comment deleted successfully');
+              
+              // Update comments count
+              if (selectedPost) {
+                const { error: updateError } = await supabase
+                  .from('posts')
+                  .update({ comments_count: Math.max(0, (selectedPost.comments_count || 0) - 1) })
+                  .eq('id', selectedPost.id);
+
+                if (updateError) {
+                  console.error('Error updating comments count:', updateError);
+                }
+              }
+
+              await loadComments();
+              await loadPosts();
+            } catch (error) {
+              console.error('Unexpected error deleting comment:', error);
+              Alert.alert('Error', 'Failed to delete comment. Please try again.');
             }
           }
         }
@@ -254,7 +312,7 @@ export default function CommunityFeedSection() {
 
       if (error) {
         console.error('Error creating post:', error);
-        Alert.alert('Error', 'Failed to create post');
+        Alert.alert('Error', 'Failed to create post. Please try again.');
         return;
       }
 
@@ -262,7 +320,7 @@ export default function CommunityFeedSection() {
       await loadPosts();
     } catch (error) {
       console.error('Unexpected error creating post:', error);
-      Alert.alert('Error', 'Failed to create post');
+      Alert.alert('Error', 'Failed to create post. Please try again.');
     }
   };
 
@@ -288,7 +346,7 @@ export default function CommunityFeedSection() {
 
       if (error) {
         console.error('Error adding comment:', error);
-        Alert.alert('Error', 'Failed to add comment');
+        Alert.alert('Error', 'Failed to add comment. Please try again.');
         return;
       }
 
@@ -308,15 +366,39 @@ export default function CommunityFeedSection() {
       console.log('Added comment to post:', selectedPost.id);
     } catch (error) {
       console.error('Unexpected error adding comment:', error);
-      Alert.alert('Error', 'Failed to add comment');
+      Alert.alert('Error', 'Failed to add comment. Please try again.');
     }
   };
 
+  const canDeletePost = (post: Post) => {
+    if (!currentUser || !userProfile) return false;
+    
+    // User can delete their own posts
+    if (post.author_id === currentUser.id) return true;
+    
+    // Admins can delete any post
+    const isAdmin = userProfile.role?.toLowerCase().includes('admin') || 
+                   userProfile.role?.toLowerCase().includes('scoutmaster') ||
+                   userProfile.role?.toLowerCase().includes('leader');
+    return isAdmin;
+  };
 
+  const canDeleteComment = (comment: Comment) => {
+    if (!currentUser || !userProfile) return false;
+    
+    // User can delete their own comments
+    if (comment.author_id === currentUser.id) return true;
+    
+    // Admins can delete any comment
+    const isAdmin = userProfile.role?.toLowerCase().includes('admin') || 
+                   userProfile.role?.toLowerCase().includes('scoutmaster') ||
+                   userProfile.role?.toLowerCase().includes('leader');
+    return isAdmin;
+  };
 
   const PostCard = ({ post }: { post: Post }) => {
     const postComments = comments.filter(c => c.post_id === post.id);
-    const canDelete = currentUser && currentUser.id === post.author_id;
+    const canDelete = canDeletePost(post);
     const isNew = isNewPost(post.created_at);
 
     // Style for new posts: white background and larger text
@@ -532,15 +614,32 @@ export default function CommunityFeedSection() {
               ) : (
                 comments.filter(c => c.post_id === selectedPost.id).map((comment) => (
                   <View key={comment.id} style={[commonStyles.card, { marginBottom: 8 }]}>
-                    <Text style={[commonStyles.text, { fontWeight: '600', marginBottom: 4 }]}>
-                      {comment.author_name}
-                    </Text>
-                    <ClickableText style={commonStyles.text}>
-                      {comment.content}
-                    </ClickableText>
-                    <Text style={[commonStyles.textSecondary, { marginTop: 4 }]}>
-                      {formatDate(comment.created_at)}
-                    </Text>
+                    <View style={commonStyles.row}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[commonStyles.text, { fontWeight: '600', marginBottom: 4 }]}>
+                          {comment.author_name}
+                        </Text>
+                        <ClickableText style={commonStyles.text}>
+                          {comment.content}
+                        </ClickableText>
+                        <Text style={[commonStyles.textSecondary, { marginTop: 4 }]}>
+                          {formatDate(comment.created_at)}
+                        </Text>
+                      </View>
+                      {canDeleteComment(comment) && (
+                        <TouchableOpacity
+                          onPress={() => handleDeleteComment(comment)}
+                          style={{
+                            backgroundColor: colors.error,
+                            padding: 6,
+                            borderRadius: 4,
+                            marginLeft: 8,
+                          }}
+                        >
+                          <Icon name="trash" size={14} color={colors.backgroundAlt} />
+                        </TouchableOpacity>
+                      )}
+                    </View>
                   </View>
                 ))
               )}

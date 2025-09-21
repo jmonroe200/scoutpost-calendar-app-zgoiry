@@ -47,6 +47,11 @@ export default function PreviousNewslettersScreen({ isVisible, onClose }: Previo
     }
   };
 
+  const handleNewsletterDeleted = () => {
+    setSelectedNewsletter(null);
+    loadPreviousNewsletters(); // Reload the newsletters list
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -274,6 +279,7 @@ export default function PreviousNewslettersScreen({ isVisible, onClose }: Previo
           newsletter={selectedNewsletter}
           isVisible={!!selectedNewsletter}
           onClose={() => setSelectedNewsletter(null)}
+          onDeleted={handleNewsletterDeleted}
         />
       </SafeAreaView>
     </Modal>

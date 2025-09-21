@@ -1,19 +1,104 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Modal, StatusBar, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { commonStyles, colors } from '../styles/commonStyles';
 import Icon from './Icon';
 import { Newsletter } from '../lib/types';
+import { supabase } from '../lib/supabase';
 import * as Linking from 'expo-linking';
 
 interface NewsletterDetailScreenProps {
   newsletter: Newsletter | null;
   isVisible: boolean;
   onClose: () => void;
+  onDeleted?: () => void;
 }
 
-export default function NewsletterDetailScreen({ newsletter, isVisible, onClose }: NewsletterDetailScreenProps) {
+export default function NewsletterDetailScreen({ newsletter, isVisible, onClose, onDeleted }: NewsletterDetailScreenProps) {
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [canDelete, setCanDelete] = useState(false);
+
+  useEffect(() => {
+    if (isVisible && newsletter) {
+      checkUserPermissions();
+    }
+  }, [isVisible, newsletter]);
+
+  const checkUserPermissions = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUser(user);
+
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+
+        setUserProfile(profile);
+
+        // Check if user is admin or the author
+        const isAdmin = profile?.role?.toLowerCase().includes('admin') || 
+                       profile?.role?.toLowerCase().includes('scoutmaster') ||
+                       profile?.role?.toLowerCase().includes('leader');
+        const isAuthor = newsletter?.author_id === user.id;
+
+        setCanDelete(isAdmin || isAuthor);
+      }
+    } catch (error) {
+      console.error('Error checking user permissions:', error);
+    }
+  };
+
+  const handleDeleteNewsletter = () => {
+    if (!newsletter) return;
+
+    Alert.alert(
+      'Delete Newsletter',
+      `Are you sure you want to delete "${newsletter.title}"? This action cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const { error } = await supabase
+                .from('newsletters')
+                .delete()
+                .eq('id', newsletter.id);
+
+              if (error) {
+                console.error('Error deleting newsletter:', error);
+                Alert.alert('Error', 'Failed to delete newsletter. Please try again.');
+                return;
+              }
+
+              console.log('Newsletter deleted successfully');
+              Alert.alert('Success', 'Newsletter deleted successfully', [
+                {
+                  text: 'OK',
+                  onPress: () => {
+                    onClose();
+                    if (onDeleted) {
+                      onDeleted();
+                    }
+                  }
+                }
+              ]);
+            } catch (error) {
+              console.error('Unexpected error deleting newsletter:', error);
+              Alert.alert('Error', 'Failed to delete newsletter. Please try again.');
+            }
+          }
+        }
+      ]
+    );
+  };
+
   if (!newsletter) return null;
 
   const formatDate = (dateString: string) => {
@@ -315,6 +400,21 @@ export default function NewsletterDetailScreen({ newsletter, isVisible, onClose 
               {newsletter.title}
             </Text>
           </View>
+
+          {/* Delete Button for Admins/Authors */}
+          {canDelete && (
+            <TouchableOpacity
+              onPress={handleDeleteNewsletter}
+              style={{
+                backgroundColor: colors.error,
+                padding: 8,
+                borderRadius: 8,
+                marginLeft: 8,
+              }}
+            >
+              <Icon name="trash" size={20} color={colors.backgroundAlt} />
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Content - White background */}

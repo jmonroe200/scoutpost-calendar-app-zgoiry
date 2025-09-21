@@ -40,6 +40,11 @@ export default function NewsletterSection() {
     }
   };
 
+  const handleNewsletterDeleted = () => {
+    setSelectedNewsletter(null);
+    loadNewsletters(); // Reload the newsletters list
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -436,6 +441,7 @@ export default function NewsletterSection() {
         newsletter={selectedNewsletter}
         isVisible={!!selectedNewsletter}
         onClose={() => setSelectedNewsletter(null)}
+        onDeleted={handleNewsletterDeleted}
       />
     </View>
   );
