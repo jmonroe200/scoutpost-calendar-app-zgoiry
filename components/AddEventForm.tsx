@@ -133,7 +133,7 @@ export default function AddEventForm({ selectedDate, onAddEvent, onCancel }: Add
           <Text style={[commonStyles.textSecondary, { marginBottom: 8 }]}>Description</Text>
           <TextInput
             style={[commonStyles.input, { height: 80, textAlignVertical: 'top' }]}
-            placeholder="Enter event description"
+            placeholder="Enter event description (URLs will be clickable)"
             value={description}
             onChangeText={setDescription}
             multiline

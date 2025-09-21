@@ -150,6 +150,61 @@ export default function NewsletterDetailScreen({ newsletter, isVisible, onClose 
     let remainingText = text;
     let keyIndex = startKeyIndex;
 
+    // First, detect and process URLs (auto-linking)
+    const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(?:\/[^\s]*)?)/g;
+    let lastIndex = 0;
+    let match;
+
+    while ((match = urlRegex.exec(remainingText)) !== null) {
+      const url = match[0];
+      const startIndex = match.index;
+
+      // Add text before URL
+      if (startIndex > lastIndex) {
+        const beforeUrlText = remainingText.substring(lastIndex, startIndex);
+        elements.push(processStylesWithoutUrls(beforeUrlText, keyIndex));
+        keyIndex += 100;
+      }
+
+      // Add clickable URL
+      elements.push(
+        <TouchableOpacity 
+          key={keyIndex++} 
+          onPress={() => handleLinkPress(url)}
+          style={{ display: 'contents' }}
+        >
+          <Text style={{ 
+            color: colors.info, 
+            textDecorationLine: 'underline',
+            fontWeight: '500'
+          }}>
+            {url}
+          </Text>
+        </TouchableOpacity>
+      );
+
+      lastIndex = startIndex + url.length;
+    }
+
+    // Add remaining text after last URL
+    if (lastIndex < remainingText.length) {
+      const afterUrlText = remainingText.substring(lastIndex);
+      elements.push(processStylesWithoutUrls(afterUrlText, keyIndex));
+    }
+
+    // If no URLs were found, process the whole text for other styles
+    if (elements.length === 0) {
+      return processStylesWithoutUrls(remainingText, keyIndex);
+    }
+
+    return elements;
+  };
+
+  const processStylesWithoutUrls = (text: string, startKeyIndex: number) => {
+    const elements: React.ReactNode[] = [];
+    let remainingText = text;
+    let keyIndex = startKeyIndex;
+
     // Process bold text (**text**)
     while (remainingText.includes('**')) {
       const startIndex = remainingText.indexOf('**');

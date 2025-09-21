@@ -7,6 +7,7 @@ import Icon from './Icon';
 import SimpleBottomSheet from './BottomSheet';
 import AddEventForm from './AddEventForm';
 import { supabase } from '../lib/supabase';
+import ClickableText from './ClickableText';
 
 interface ScoutEvent {
   id: string;
@@ -327,9 +328,9 @@ export default function CalendarScreen() {
                         <Text style={[commonStyles.textSecondary, { marginBottom: 4 }]}>
                           {event.time} • {event.location}
                         </Text>
-                        <Text style={[commonStyles.text, { marginBottom: 4 }]}>
+                        <ClickableText style={[commonStyles.text, { marginBottom: 4 }]}>
                           {event.description}
-                        </Text>
+                        </ClickableText>
                         <Text style={commonStyles.textSecondary}>
                           Created by: {event.created_by_name}
                         </Text>

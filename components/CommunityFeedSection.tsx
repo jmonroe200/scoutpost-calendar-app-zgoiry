@@ -6,6 +6,7 @@ import Icon from './Icon';
 import SimpleBottomSheet from './BottomSheet';
 import CreatePostScreen from './CreatePostScreen';
 import { supabase } from '../lib/supabase';
+import ClickableText from './ClickableText';
 
 interface Post {
   id: string;
@@ -311,6 +312,8 @@ export default function CommunityFeedSection() {
     }
   };
 
+
+
   const PostCard = ({ post }: { post: Post }) => {
     const postComments = comments.filter(c => c.post_id === post.id);
     const canDelete = currentUser && currentUser.id === post.author_id;
@@ -393,9 +396,9 @@ export default function CommunityFeedSection() {
           )}
         </View>
 
-        <Text style={contentTextStyle}>
+        <ClickableText style={contentTextStyle}>
           {post.content}
-        </Text>
+        </ClickableText>
 
         {post.image_url && (
           <Image
@@ -532,9 +535,9 @@ export default function CommunityFeedSection() {
                     <Text style={[commonStyles.text, { fontWeight: '600', marginBottom: 4 }]}>
                       {comment.author_name}
                     </Text>
-                    <Text style={commonStyles.text}>
+                    <ClickableText style={commonStyles.text}>
                       {comment.content}
-                    </Text>
+                    </ClickableText>
                     <Text style={[commonStyles.textSecondary, { marginTop: 4 }]}>
                       {formatDate(comment.created_at)}
                     </Text>

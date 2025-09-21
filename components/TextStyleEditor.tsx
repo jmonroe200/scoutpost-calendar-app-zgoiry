@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, TextInput, ScrollView, Alert, Modal } from 'react-native';
 import { commonStyles, colors } from '../styles/commonStyles';
 import Icon from './Icon';
+import * as Linking from 'expo-linking';
 
 interface TextStyleEditorProps {
   value: string;
@@ -253,12 +254,33 @@ export default function TextStyleEditor({ value, onChangeText, placeholder }: Te
     });
   };
 
+  const handleLinkPress = async (url: string) => {
+    try {
+      // Add https:// if no protocol is specified
+      let formattedUrl = url;
+      if (!formattedUrl.startsWith('http://') && !formattedUrl.startsWith('https://')) {
+        formattedUrl = 'https://' + formattedUrl;
+      }
+
+      const canOpen = await Linking.canOpenURL(formattedUrl);
+      if (canOpen) {
+        await Linking.openURL(formattedUrl);
+        console.log('Opened URL:', formattedUrl);
+      } else {
+        Alert.alert('Error', 'Cannot open this link');
+      }
+    } catch (error) {
+      console.error('Error opening link:', error);
+      Alert.alert('Error', 'Failed to open link');
+    }
+  };
+
   const renderInlineStyles = (text: string) => {
     const elements: React.ReactNode[] = [];
     let remainingText = text;
     let keyIndex = 0;
 
-    // Process links first [display text](url)
+    // Process markdown links first [display text](url)
     while (remainingText.includes('[') && remainingText.includes('](') && remainingText.includes(')')) {
       const linkStartIndex = remainingText.indexOf('[');
       const linkMiddleIndex = remainingText.indexOf('](', linkStartIndex);
@@ -282,27 +304,25 @@ export default function TextStyleEditor({ value, onChangeText, placeholder }: Te
 
       // Add clickable link
       elements.push(
-        <Text 
+        <TouchableOpacity 
           key={keyIndex++} 
-          style={{ 
+          onPress={() => handleLinkPress(url)}
+          style={{ display: 'contents' }}
+        >
+          <Text style={{ 
             color: colors.info, 
             textDecorationLine: 'underline',
             fontWeight: '500'
-          }}
-          onPress={() => {
-            console.log('Link pressed:', url);
-            // Note: In a real app, you'd use Linking.openURL(url) here
-            Alert.alert('Link', `Would open: ${url}`);
-          }}
-        >
-          {displayText}
-        </Text>
+          }}>
+            {displayText}
+          </Text>
+        </TouchableOpacity>
       );
 
       remainingText = remainingText.substring(linkEndIndex + 1);
     }
 
-    // Process remaining text for other styles
+    // Process remaining text for other styles and auto-detect URLs
     if (remainingText) {
       elements.push(processTextForOtherStyles(remainingText, keyIndex));
     }
@@ -311,6 +331,61 @@ export default function TextStyleEditor({ value, onChangeText, placeholder }: Te
   };
 
   const processTextForOtherStyles = (text: string, startKeyIndex: number) => {
+    const elements: React.ReactNode[] = [];
+    let remainingText = text;
+    let keyIndex = startKeyIndex;
+
+    // First, detect and process URLs (auto-linking)
+    const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(?:\/[^\s]*)?)/g;
+    let lastIndex = 0;
+    let match;
+
+    while ((match = urlRegex.exec(remainingText)) !== null) {
+      const url = match[0];
+      const startIndex = match.index;
+
+      // Add text before URL
+      if (startIndex > lastIndex) {
+        const beforeUrlText = remainingText.substring(lastIndex, startIndex);
+        elements.push(processStylesWithoutUrls(beforeUrlText, keyIndex));
+        keyIndex += 100;
+      }
+
+      // Add clickable URL
+      elements.push(
+        <TouchableOpacity 
+          key={keyIndex++} 
+          onPress={() => handleLinkPress(url)}
+          style={{ display: 'contents' }}
+        >
+          <Text style={{ 
+            color: colors.info, 
+            textDecorationLine: 'underline',
+            fontWeight: '500'
+          }}>
+            {url}
+          </Text>
+        </TouchableOpacity>
+      );
+
+      lastIndex = startIndex + url.length;
+    }
+
+    // Add remaining text after last URL
+    if (lastIndex < remainingText.length) {
+      const afterUrlText = remainingText.substring(lastIndex);
+      elements.push(processStylesWithoutUrls(afterUrlText, keyIndex));
+    }
+
+    // If no URLs were found, process the whole text for other styles
+    if (elements.length === 0) {
+      return processStylesWithoutUrls(remainingText, keyIndex);
+    }
+
+    return elements;
+  };
+
+  const processStylesWithoutUrls = (text: string, startKeyIndex: number) => {
     const elements: React.ReactNode[] = [];
     let remainingText = text;
     let keyIndex = startKeyIndex;
@@ -486,7 +561,7 @@ export default function TextStyleEditor({ value, onChangeText, placeholder }: Te
             padding: 16,
             borderRadius: 8,
           }]}
-          placeholder={placeholder || "Start typing your newsletter content...\n\nFormatting tips:\n• Use **bold** for bold text\n• Use *italic* for italic text\n• Start lines with # for headings\n• Start lines with • for bullet points\n• Use [text](url) for links"}
+          placeholder={placeholder || "Start typing your newsletter content...\n\nFormatting tips:\n• Use **bold** for bold text\n• Use *italic* for italic text\n• Start lines with # for headings\n• Start lines with • for bullet points\n• Use [text](url) for links\n• Paste URLs directly - they'll become clickable automatically!"}
           value={value}
           onChangeText={onChangeText}
           onSelectionChange={(event) => {
@@ -507,7 +582,7 @@ export default function TextStyleEditor({ value, onChangeText, placeholder }: Te
         borderTopColor: colors.border,
       }}>
         <Text style={[commonStyles.textSecondary, { fontSize: 12, textAlign: 'center' }]}>
-          Select text and tap formatting buttons, or use markdown: **bold**, *italic*, # heading, • bullet, [text](url)
+          Select text and tap formatting buttons, or use markdown: **bold**, *italic*, # heading, • bullet, [text](url). URLs are automatically clickable!
         </Text>
       </View>
 

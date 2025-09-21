@@ -113,7 +113,7 @@ export default function NewsletterSection() {
     let remainingText = text;
     let keyIndex = 0;
 
-    // Process links first [display text](url) - but don't make them clickable in preview
+    // Process markdown links first [display text](url) - but don't make them clickable in preview
     while (remainingText.includes('[') && remainingText.includes('](') && remainingText.includes(')')) {
       const linkStartIndex = remainingText.indexOf('[');
       const linkMiddleIndex = remainingText.indexOf('](', linkStartIndex);
@@ -152,7 +152,7 @@ export default function NewsletterSection() {
       remainingText = remainingText.substring(linkEndIndex + 1);
     }
 
-    // Process remaining text for other styles
+    // Process remaining text for other styles and auto-detect URLs
     if (remainingText) {
       elements.push(processTextForOtherStylesPreview(remainingText, keyIndex));
     }
@@ -161,6 +161,58 @@ export default function NewsletterSection() {
   };
 
   const processTextForOtherStylesPreview = (text: string, startKeyIndex: number) => {
+    const elements: React.ReactNode[] = [];
+    let remainingText = text;
+    let keyIndex = startKeyIndex;
+
+    // First, detect and process URLs (auto-linking) - but don't make them clickable in preview
+    const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(?:\/[^\s]*)?)/g;
+    let lastIndex = 0;
+    let match;
+
+    while ((match = urlRegex.exec(remainingText)) !== null) {
+      const url = match[0];
+      const startIndex = match.index;
+
+      // Add text before URL
+      if (startIndex > lastIndex) {
+        const beforeUrlText = remainingText.substring(lastIndex, startIndex);
+        elements.push(processStylesWithoutUrlsPreview(beforeUrlText, keyIndex));
+        keyIndex += 100;
+      }
+
+      // Add URL text (not clickable in preview)
+      elements.push(
+        <Text 
+          key={keyIndex++} 
+          style={{ 
+            color: colors.info, 
+            textDecorationLine: 'underline',
+            fontWeight: '500'
+          }}
+        >
+          {url}
+        </Text>
+      );
+
+      lastIndex = startIndex + url.length;
+    }
+
+    // Add remaining text after last URL
+    if (lastIndex < remainingText.length) {
+      const afterUrlText = remainingText.substring(lastIndex);
+      elements.push(processStylesWithoutUrlsPreview(afterUrlText, keyIndex));
+    }
+
+    // If no URLs were found, process the whole text for other styles
+    if (elements.length === 0) {
+      return processStylesWithoutUrlsPreview(remainingText, keyIndex);
+    }
+
+    return elements;
+  };
+
+  const processStylesWithoutUrlsPreview = (text: string, startKeyIndex: number) => {
     const elements: React.ReactNode[] = [];
     let remainingText = text;
     let keyIndex = startKeyIndex;
