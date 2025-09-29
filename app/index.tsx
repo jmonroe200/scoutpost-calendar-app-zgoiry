@@ -169,7 +169,7 @@ export default function LoginScreen() {
               elevation: 5,
             }}>
               <Image 
-                source={require('../assets/images/006a9a79-1c40-4999-ba26-8d0a58a09b1d.jpeg')}
+                source={require('../assets/images/f0132970-09ee-4263-8f68-99f3ca068743.png')}
                 style={{ width: 40, height: 40 }}
                 resizeMode="contain"
               />
